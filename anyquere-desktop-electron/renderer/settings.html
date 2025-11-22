@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyQuere Settings</title>
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="settings-container">
+        <header class="settings-header">
+            <h1>anyQuere Settings</h1>
+        </header>
+
+        <main class="settings-main">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="sources">Data Sources</button>
+                <button class="tab-btn" data-tab="data">Data Preview</button>
+                <button class="tab-btn" data-tab="about">About</button>
+            </div>
+
+            <!-- Data Sources Tab -->
+            <div class="tab-content active" id="sources-tab">
+                <div class="section">
+                    <h2>Data Sources</h2>
+                    <p>Configure your CSV files and Google Sheets for searching.</p>
+
+                    <div class="sources-table-container">
+                        <table class="sources-table">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sourcesTableBody">
+                                <!-- Sources will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="addSourceBtn" class="btn btn-primary">Add Source</button>
+                        <button id="removeSourceBtn" class="btn btn-secondary">Remove Selected</button>
+                        <button id="testSourceBtn" class="btn btn-secondary">Test Selected</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Preview Tab -->
+            <div class="tab-content" id="data-tab">
+                <div class="section">
+                    <h2>Data Preview</h2>
+                    <p>Preview the data from your configured sources.</p>
+
+                    <div class="preview-controls">
+                        <select id="previewSourceSelect">
+                            <option value="">Select a source...</option>
+                        </select>
+                        <button id="loadPreviewBtn" class="btn btn-secondary">Load Preview</button>
+                    </div>
+
+                    <div class="preview-container">
+                        <div id="previewContent" class="preview-content">
+                            Select a source to preview its data
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Tab -->
+            <div class="tab-content" id="about-tab">
+                <div class="section">
+                    <h2>About anyQuere</h2>
+                    <div class="about-content">
+                        <p><strong>Version:</strong> 1.0.0</p>
+                        <p><strong>Description:</strong> Fast desktop search for your CSV data and Google Sheets.</p>
+
+                        <h3>Features</h3>
+                        <ul>
+                            <li>Lightning-fast search through local CSV files</li>
+                            <li>Google Sheets integration</li>
+                            <li>System tray integration for quick access</li>
+                            <li>Keyboard shortcuts (Cmd/Ctrl+K)</li>
+                            <li>Configurable search columns and results</li>
+                        </ul>
+
+                        <h3>Keyboard Shortcuts</h3>
+                        <ul>
+                            <li><strong>Cmd/Ctrl+K:</strong> Focus search</li>
+                            <li><strong>Escape:</strong> Close search window</li>
+                            <li><strong>Enter:</strong> Select search result</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="settings-footer">
+            <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+            <button id="closeSettingsBtn" class="btn btn-secondary">Close</button>
+        </footer>
+    </div>
+
+    <!-- Add Source Modal -->
+    <div class="modal" id="addSourceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Data Source</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="sourceForm">
+                    <div class="form-group">
+                        <label for="sourceAlias">Source Name</label>
+                        <input type="text" id="sourceAlias" required placeholder="e.g., Customers">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sourceType">Source Type</label>
+                        <select id="sourceType" required>
+                            <option value="">Select type...</option>
+                            <option value="local">Local CSV File</option>
+                            <option value="google">Google Sheet</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="pathGroup">
+                        <label for="sourcePath">File Path / Sheet URL</label>
+                        <input type="text" id="sourcePath" required placeholder="/path/to/file.csv or Google Sheet URL">
+                        <button type="button" id="browseBtn" class="btn btn-secondary">Browse</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="searchCol">Search Column (0-based)</label>
+                        <input type="number" id="searchCol" value="0" min="0" placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="headerRow">Header Row</label>
+                        <input type="number" id="headerRow" value="1" min="1" placeholder="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxResults">Max Results</label>
+                        <input type="number" id="maxResults" value="10" min="1" max="100" placeholder="10">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resultCols">Result Columns</label>
+                        <select id="resultCols" multiple style="width: 100%; min-height: 120px;">
+                            <option value="">Loading columns...</option>
+                        </select>
+                        <small>Hold Ctrl/Cmd to select multiple columns. Leave empty to show all columns except search column.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="testNewSourceBtn" class="btn btn-secondary">Test Connection</button>
+                <button id="saveSourceBtn" class="btn btn-primary">Add Source</button>
+                <button id="cancelSourceBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

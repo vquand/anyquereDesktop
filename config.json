@@ -1,0 +1,33 @@
+{
+    "sources": [
+        {
+            "alias": "icpe",
+            "type": "google",
+            "path": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpFC0ACprJz4yMygyz3tbENTVajkAoRDP3K1WiUrGFnI0tTk0tl0xy8lwwexigV95t42qE5_WN1v15/pub?gid=0&single=true&output=csv",
+            "searchCol": 0,
+            "resultCols": [],
+            "headerRow": 1,
+            "maxResults": 10
+        },
+        {
+            "alias": "mvm",
+            "type": "local",
+            "path": "/Users/willdo/Downloads/Stock Mouvement Event Code.csv",
+            "searchCol": 0,
+            "resultCols": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "headerRow": 1,
+            "maxResults": 10
+        }
+    ],
+    "settings": {
+        "autoStart": false,
+        "showOnStartup": false,
+        "globalShortcut": "auto",
+        "theme": "dark"
+    }
+}

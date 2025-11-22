@@ -1,0 +1,65 @@
+{
+    "settings": {
+        "autoStart": false,
+        "showOnStartup": false,
+        "globalShortcut": "auto",
+        "theme": "dark"
+    },
+    "sources": [
+        {
+            "alias": "mvm",
+            "type": "local",
+            "path": "/Users/willdo/Downloads/Stock Mouvement Event Code.csv",
+            "search_col": 0,
+            "result_cols": [
+                0,
+                1,
+                2
+            ],
+            "header_row": 1,
+            "max_results": 10
+        },
+        {
+            "alias": "fr",
+            "type": "local",
+            "path": "/Users/willdo/Documents/GitHub/anyquereDesktop/test_french.csv",
+            "search_col": 1,
+            "result_cols": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "header_row": 1,
+            "max_results": 10
+        },
+        {
+            "alias": "long",
+            "type": "local",
+            "path": "/Users/willdo/Documents/GitHub/anyquereDesktop/test_long_text.csv",
+            "search_col": 2,
+            "result_cols": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "header_row": 1,
+            "max_results": 5
+        },
+        {
+            "alias": "Goo",
+            "type": "google",
+            "path": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTpFC0ACprJz4yMygyz3tbENTVajkAoRDP3K1WiUrGFnI0tTk0tl0xy8lwwexigV95t42qE5_WN1v15/pub?gid=0&single=true&output=csv",
+            "search_col": 0,
+            "result_cols": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "header_row": 1,
+            "max_results": 10
+        }
+    ]
+}

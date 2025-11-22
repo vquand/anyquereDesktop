@@ -1,0 +1,8 @@
+# Anyquere Desktop - System Requirements
+# Install these packages using: pip install -r requirements.txt
+# Note: Using tkinter (built into Python) for better macOS compatibility
+
+pandas>=2.0.0
+requests>=2.30.0
+pystray>=0.19.4
+pillow>=8.0.0

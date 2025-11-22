@@ -1,0 +1,66 @@
+{
+  "name": "anyquere-desktop-electron",
+  "version": "1.0.0",
+  "description": "Fast desktop search for your CSV data and Google Sheets",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --debug",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "build-win": "electron-builder --win",
+    "build-linux": "electron-builder --linux",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["search", "csv", "data", "desktop", "electron"],
+  "author": "anyQuere",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^39.2.3",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "csv-parse": "^5.5.6"
+  },
+  "build": {
+    "appId": "com.anyquere.desktop",
+    "productName": "anyQuere",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "files": [
+      "main.js",
+      "data-manager.js",
+      "renderer/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ]
+  }
+}

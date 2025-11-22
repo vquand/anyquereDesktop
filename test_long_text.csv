@@ -1,0 +1,11 @@
+Code,Nom,Description,Ville
+001,Smith,"John Smith - Senior Software Engineer with expertise in Python, Django, React and cloud architecture. Specialized in building scalable web applications and microservices.",New York
+002,Johnson,"Maria Johnson - Product Manager with extensive experience in agile methodologies, user research, and cross-functional team leadership. Focused on customer-centric product development.",San Francisco
+003,Williams,"Robert Williams - DevOps Engineer specializing in CI/CD pipelines, containerization with Docker and Kubernetes, infrastructure as code using Terraform, and monitoring with Prometheus.",Seattle
+004,Brown,"Jennifer Brown - UX/UI Designer passionate about creating intuitive user interfaces, conducting user research, developing design systems, and ensuring accessibility standards compliance.",Austin
+005,Jones,"Michael Jones - Data Scientist with strong background in machine learning, statistical analysis, data visualization, and predictive modeling using Python and R.",Boston
+006,Garcia,"Sofia Garcia - Full Stack Developer proficient in frontend frameworks like Vue.js and Angular, backend technologies including Node.js and Java, database management, and API design.",Chicago
+007,Miller,"David Miller - Cybersecurity Specialist experienced in penetration testing, security audits, incident response, compliance frameworks, and implementing zero-trust security architectures.",Denver
+008,Davis,"Emily Davis - Marketing Director with expertise in digital marketing strategies, content creation, social media management, brand development, and data-driven campaign optimization.",Miami
+009,Rodriguez,"Carlos Rodriguez - Mobile App Developer skilled in iOS and Android development using Swift, Kotlin, React Native, and Flutter. Experienced in app store optimization and user experience design.",Portland
+010,Martinez,"Lisa Martinez - Technical Writer specializing in API documentation, user manuals, technical specifications, and knowledge base management. Strong background in software development lifecycle documentation.",Phoenix

@@ -1,0 +1,474 @@
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut } = require('electron');
+const path = require('path');
+const DataManager = require('./data-manager');
+
+class SystemTrayApp {
+    constructor() {
+        this.tray = null;
+        this.searchWindow = null;
+        this.settingsWindow = null;
+        this.dataManager = new DataManager();
+        this.isReady = false;
+
+        // Handle app ready
+        app.whenReady().then(() => {
+            this.onReady();
+        });
+
+        // Handle all windows closed
+        app.on('window-all-closed', () => {
+            // On macOS, keep app running even when all windows are closed
+            if (process.platform !== 'darwin') {
+                app.quit();
+            }
+        });
+
+        // Handle app quit - cleanup global shortcuts
+        app.on('will-quit', () => {
+            globalShortcut.unregisterAll();
+        });
+
+        // Handle app activate (macOS)
+        app.on('activate', () => {
+            if (this.searchWindow) {
+                this.searchWindow.show();
+            }
+        });
+
+        // Setup IPC handlers
+        this.setupIpcHandlers();
+    }
+
+    onReady() {
+        console.log('Application ready');
+        this.isReady = true;
+        this.createTray();
+        this.setupGlobalShortcuts();
+        this.handleStartupBehavior();
+    }
+
+    createTray() {
+        try {
+            console.log('Creating system tray...');
+            let trayIcon;
+
+            // Try different icon sizes for different platforms
+            const iconSize = process.platform === 'darwin' ? 18 : 16;
+
+            // Try to load the icon
+            const iconPath = path.join(__dirname, 'assets/icon.png');
+            console.log('Icon path:', iconPath);
+            console.log('Icon file exists:', require('fs').existsSync(iconPath));
+
+            // Just use the PNG icon without template mode to ensure visibility
+            try {
+                const image = nativeImage.createFromPath(iconPath);
+                console.log('Icon loaded, size:', image.getSize(), 'empty:', image.isEmpty());
+
+                if (!image.isEmpty()) {
+                    trayIcon = image.resize({
+                        width: iconSize,
+                        height: iconSize,
+                        quality: 'best'
+                    });
+                    console.log('Using resized PNG icon without template mode');
+                } else {
+                    throw new Error('PNG icon is empty');
+                }
+            } catch (error) {
+                console.log('PNG failed, creating fallback icon:', error.message);
+                trayIcon = this.createSimpleFallbackIcon(iconSize);
+            }
+
+            // Create tray
+            this.tray = new Tray(trayIcon);
+            this.tray.setToolTip('anyQuere');
+            console.log('Tray created with icon');
+
+            // Create context menu
+            const contextMenu = Menu.buildFromTemplate([
+                {
+                    label: 'Search',
+                    click: () => this.showSearch()
+                },
+                {
+                    label: 'Settings',
+                    click: () => this.showSettings()
+                },
+                { type: 'separator' },
+                {
+                    label: 'Quit',
+                    click: () => this.quitApp()
+                }
+            ]);
+
+            this.tray.setContextMenu(contextMenu);
+
+            // Remove automatic left-click behavior
+            // Search will only appear when selected from the context menu
+            console.log('Tray configured - Search only available from context menu');
+
+            console.log('System tray created successfully');
+
+        } catch (error) {
+            console.error('Failed to create tray:', error);
+            // Continue without tray - create window instead
+            setTimeout(() => {
+                this.showSearch();
+            }, 1000);
+        }
+    }
+
+    setupGlobalShortcuts() {
+        try {
+            console.log('Setting up global shortcuts...');
+
+            // Register Cmd+Space (macOS) or Ctrl+Space (Windows/Linux) for search
+            const searchAccelerator = process.platform === 'darwin' ? 'Cmd+Space' : 'Ctrl+Space';
+
+            const success = globalShortcut.register(searchAccelerator, () => {
+                console.log('Global shortcut triggered');
+                this.showSearch();
+            });
+
+            if (success) {
+                console.log(`Global shortcut registered: ${searchAccelerator}`);
+            } else {
+                console.log(`Global shortcut registration failed: ${searchAccelerator}`);
+                // Try alternative shortcuts
+                this.setupAlternativeShortcuts();
+            }
+
+        } catch (error) {
+            console.error('Failed to setup global shortcuts:', error);
+        }
+    }
+
+    setupAlternativeShortcuts() {
+        const alternatives = [
+            'CmdOrCtrl+K',
+            'CmdOrCtrl+Shift+Space',
+            'Alt+Space'
+        ];
+
+        alternatives.forEach(shortcut => {
+            try {
+                const success = globalShortcut.register(shortcut, () => {
+                    console.log(`Alternative global shortcut triggered: ${shortcut}`);
+                    this.showSearch();
+                });
+
+                if (success) {
+                    console.log(`Alternative global shortcut registered: ${shortcut}`);
+                    return; // Stop trying alternatives after first success
+                }
+            } catch (error) {
+                console.log(`Failed to register alternative shortcut: ${shortcut}`);
+            }
+        });
+    }
+
+    handleStartupBehavior() {
+        try {
+            const settings = this.dataManager.getSettings();
+            console.log('Startup settings:', settings);
+
+            // Show search window on startup if enabled
+            if (settings.showOnStartup) {
+                setTimeout(() => {
+                    this.showSearch();
+                }, 1000); // Wait 1 second to ensure everything is loaded
+            }
+        } catch (error) {
+            console.error('Failed to handle startup behavior:', error);
+        }
+    }
+
+    createSimpleFallbackIcon(size) {
+        // Create text-only icon like weather app
+        const svgData = `
+            <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+                <!-- Just text like macOS Weather app shows temperature -->
+                <text x="${size/2}" y="${size/2 + 1}"
+                      font-family="system-ui, -apple-system, 'SF Pro Text', sans-serif"
+                      font-size="${size*0.7}"
+                      font-weight="600"
+                      fill="white"
+                      text-anchor="middle"
+                      dominant-baseline="middle">aQ</text>
+            </svg>
+        `;
+
+        const buffer = Buffer.from(svgData);
+        const icon = nativeImage.createFromBuffer(buffer, {
+            width: size,
+            height: size
+        });
+
+        // Set as template image to make it work like system icons (white text, adapts to theme)
+        if (process.platform === 'darwin') {
+            try {
+                icon.setTemplateImage(true);
+                console.log('Set text icon as template image for macOS');
+            } catch (error) {
+                console.log('Could not set template image:', error.message);
+            }
+        }
+
+        console.log('Created text-only aQ icon like weather app');
+        return icon;
+    }
+
+    showSearch() {
+        try {
+            if (this.settingsWindow) {
+                this.settingsWindow.hide();
+            }
+
+            if (!this.searchWindow) {
+                // Calculate 1/2 of screen height for initial window size
+                const { screen } = require('electron');
+                const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+                const initialHeight = Math.floor(screenHeight * 0.5);
+
+                this.searchWindow = new BrowserWindow({
+                    width: 800,
+                    height: initialHeight, // Start with 1/2 screen height
+                    minHeight: 400, // Allow reasonable minimum height
+                    maxHeight: screenHeight, // Allow up to full screen height
+                    frame: false,
+                    alwaysOnTop: true,
+                    skipTaskbar: true,
+                    resizable: false, // Disable manual resizing but allow programmatic resizing
+                    webPreferences: {
+                        nodeIntegration: true,
+                        contextIsolation: false,
+                        sandbox: false
+                    }
+                });
+
+                const searchPath = path.join(__dirname, 'renderer/search.html');
+                console.log('Loading search window from:', searchPath);
+                console.log('Search file exists:', require('fs').existsSync(searchPath));
+
+                this.searchWindow.loadFile(searchPath);
+
+                this.searchWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                    console.error('Failed to load search window:', errorCode, errorDescription);
+                });
+
+                this.searchWindow.webContents.on('did-finish-load', () => {
+                    console.log('Search window loaded successfully');
+                });
+
+                this.searchWindow.on('closed', () => {
+                    this.searchWindow = null;
+                });
+
+                this.searchWindow.on('blur', () => {
+                    // Optional: hide window when it loses focus
+                    // this.searchWindow.hide();
+                });
+            }
+
+            // Position window at top-center of screen
+            const { width: screenWidth } = require('electron').screen.getPrimaryDisplay().workAreaSize;
+            const windowWidth = 800;
+            const xPos = Math.floor((screenWidth - windowWidth) / 2);
+            this.searchWindow.setPosition(xPos, 50); // Position at top-center
+            this.searchWindow.show();
+            this.searchWindow.focus();
+
+        } catch (error) {
+            console.error('Failed to show search window:', error);
+        }
+    }
+
+    showSettings() {
+        try {
+            if (this.searchWindow) {
+                this.searchWindow.hide();
+            }
+
+            if (!this.settingsWindow) {
+                this.settingsWindow = new BrowserWindow({
+                    width: 900,
+                    height: 700,
+                    minWidth: 800,
+                    minHeight: 600,
+                    webPreferences: {
+                        nodeIntegration: true,
+                        contextIsolation: false,
+                        sandbox: false
+                    }
+                });
+
+                const settingsPath = path.join(__dirname, 'renderer/settings.html');
+                console.log('Loading settings window from:', settingsPath);
+                console.log('Settings file exists:', require('fs').existsSync(settingsPath));
+
+                this.settingsWindow.loadFile(settingsPath);
+
+                this.settingsWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                    console.error('Failed to load settings window:', errorCode, errorDescription);
+                });
+
+                this.settingsWindow.webContents.on('did-finish-load', () => {
+                    console.log('Settings window loaded successfully');
+                });
+
+                this.settingsWindow.on('closed', () => {
+                    this.settingsWindow = null;
+                });
+            }
+
+            this.settingsWindow.center();
+            this.settingsWindow.show();
+
+        } catch (error) {
+            console.error('Failed to show settings window:', error);
+        }
+    }
+
+    setupIpcHandlers() {
+        // Search functionality
+        ipcMain.handle('search', async (event, alias, query) => {
+            try {
+                return await this.dataManager.search(alias, query);
+            } catch (error) {
+                console.error('Search error:', error);
+                return [];
+            }
+        });
+
+        // Data source management
+        ipcMain.handle('get-sources', async () => {
+            try {
+                return this.dataManager.getSources();
+            } catch (error) {
+                console.error('Get sources error:', error);
+                return [];
+            }
+        });
+
+        ipcMain.handle('add-source', async (event, sourceConfig) => {
+            try {
+                this.dataManager.addSource(sourceConfig);
+                return { success: true };
+            } catch (error) {
+                console.error('Add source error:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        ipcMain.handle('remove-source', async (event, alias) => {
+            try {
+                this.dataManager.removeSource(alias);
+                return { success: true };
+            } catch (error) {
+                console.error('Remove source error:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        ipcMain.handle('load-data', async (event, alias) => {
+            try {
+                return await this.dataManager.loadData(alias);
+            } catch (error) {
+                console.error('Load data error:', error);
+                return null;
+            }
+        });
+
+        // Window controls
+        ipcMain.handle('close-search', () => {
+            if (this.searchWindow) {
+                this.searchWindow.hide();
+            }
+        });
+
+        ipcMain.handle('close-settings', () => {
+            if (this.settingsWindow) {
+                this.settingsWindow.hide();
+            }
+        });
+
+        ipcMain.handle('open-settings', () => {
+            this.showSettings();
+        });
+
+        ipcMain.handle('minimize-window', (event, windowName) => {
+            const window = windowName === 'search' ? this.searchWindow : this.settingsWindow;
+            if (window) {
+                window.minimize();
+            }
+        });
+
+        // Window resizing (height only, keep x position fixed)
+        ipcMain.handle('resize-search-window', (event, width, height) => {
+            if (this.searchWindow) {
+                const [currentWidth, currentHeight] = this.searchWindow.getSize();
+                const [currentX, currentY] = this.searchWindow.getPosition();
+                const { screen } = require('electron');
+                const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+                const newWidth = width || currentWidth;
+                const newHeight = Math.max(400, Math.min(screenHeight, height || currentHeight));
+
+                // Resize window but keep x position the same (top-center)
+                this.searchWindow.setSize(newWidth, newHeight);
+                this.searchWindow.setPosition(currentX, currentY); // Maintain the same position
+                return { success: true, width: newWidth, height: newHeight };
+            }
+            return { success: false };
+        });
+
+        // App control
+        ipcMain.handle('quit-app', () => {
+            this.quitApp();
+        });
+
+        // Settings management
+        ipcMain.handle('get-settings', () => {
+            try {
+                return this.dataManager.getSettings();
+            } catch (error) {
+                console.error('Get settings error:', error);
+                return {};
+            }
+        });
+
+        ipcMain.handle('update-settings', async (event, newSettings) => {
+            try {
+                await this.dataManager.updateSettings(newSettings);
+                return { success: true };
+            } catch (error) {
+                console.error('Update settings error:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        ipcMain.handle('clear-cache', async (event, alias = null) => {
+            try {
+                this.dataManager.clearCache(alias);
+                return { success: true };
+            } catch (error) {
+                console.error('Clear cache error:', error);
+                return { success: false, error: error.message };
+            }
+        });
+    }
+
+    quitApp() {
+        console.log('Quitting application');
+        if (this.searchWindow) {
+            this.searchWindow.close();
+        }
+        if (this.settingsWindow) {
+            this.settingsWindow.close();
+        }
+        app.quit();
+    }
+}
+
+// Start the application
+new SystemTrayApp();
