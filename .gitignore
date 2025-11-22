@@ -115,14 +115,7 @@ logs
 tmp/
 temp/
 
-# Application specific
-*.dmg
-*.exe
-*.deb
-*.rpm
-*.snap
-
-# Data files (keep your actual data separate from repo)
+# Application specific data files (keep your actual data separate from repo)
 data/
 *.csv
 *.json
