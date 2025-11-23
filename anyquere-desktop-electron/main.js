@@ -56,22 +56,29 @@ class SystemTrayApp {
             const iconSize = process.platform === 'darwin' ? 18 : 16;
 
             // Try to load the icon
-            const iconPath = path.join(__dirname, 'assets/icon.png');
+            const iconPath = path.join(__dirname, 'icon.png');
             console.log('Icon path:', iconPath);
             console.log('Icon file exists:', require('fs').existsSync(iconPath));
 
-            // Just use the PNG icon without template mode to ensure visibility
+            // Just use the PNG icon with proper template mode for macOS
             try {
                 const image = nativeImage.createFromPath(iconPath);
                 console.log('Icon loaded, size:', image.getSize(), 'empty:', image.isEmpty());
 
                 if (!image.isEmpty()) {
+                    // Resize icon properly for macOS system tray
                     trayIcon = image.resize({
                         width: iconSize,
                         height: iconSize,
                         quality: 'best'
                     });
-                    console.log('Using resized PNG icon without template mode');
+
+                    // For macOS, we need to set template mode to make it visible in both dark and light mode
+                    if (process.platform === 'darwin') {
+                        trayIcon.setTemplateImage(true);
+                    }
+
+                    console.log('Using resized PNG icon with', process.platform === 'darwin' ? 'template mode' : 'normal mode');
                 } else {
                     throw new Error('PNG icon is empty');
                 }
@@ -80,7 +87,7 @@ class SystemTrayApp {
                 trayIcon = this.createSimpleFallbackIcon(iconSize);
             }
 
-            // Create tray
+            // Create tray - same constructor for all platforms
             this.tray = new Tray(trayIcon);
             this.tray.setToolTip('anyQuere');
             console.log('Tray created with icon');
