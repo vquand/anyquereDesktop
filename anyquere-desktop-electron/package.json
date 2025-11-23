@@ -1,6 +1,6 @@
 {
   "name": "anyquere-desktop-electron",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fast desktop search for your CSV data and Google Sheets",
   "main": "main.js",
   "scripts": {
@@ -69,6 +69,7 @@
     "files": [
       "main.js",
       "data-manager.js",
+      "time-converter.js",
       "renderer/**/*",
       "icon.png",
       "node_modules/**/*",

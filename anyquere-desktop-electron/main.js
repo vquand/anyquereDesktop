@@ -1,13 +1,16 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut } = require('electron');
 const path = require('path');
 const DataManager = require('./data-manager');
+const TimeConverter = require('./time-converter');
 
 class SystemTrayApp {
     constructor() {
         this.tray = null;
         this.searchWindow = null;
         this.settingsWindow = null;
+        this.timeWindow = null;
         this.dataManager = new DataManager();
+        this.timeConverter = new TimeConverter();
         this.isReady = false;
 
         // Handle app ready
@@ -35,8 +38,42 @@ class SystemTrayApp {
             }
         });
 
+        // Setup global error handlers for EPIPE
+        this.setupErrorHandlers();
+
         // Setup IPC handlers
         this.setupIpcHandlers();
+    }
+
+    setupErrorHandlers() {
+        // Handle EPIPE errors that can occur when writing to closed stdout/stderr
+        process.stdout.on('error', (error) => {
+            if (error.code === 'EPIPE') {
+                // Silently ignore pipe errors - common when output stream is closed
+                return;
+            }
+            // Re-throw other errors
+            throw error;
+        });
+
+        process.stderr.on('error', (error) => {
+            if (error.code === 'EPIPE') {
+                // Silently ignore pipe errors - common when output stream is closed
+                return;
+            }
+            // Re-throw other errors
+            throw error;
+        });
+
+        // Handle uncaught exceptions that might be EPIPE related
+        process.on('uncaughtException', (error) => {
+            if (error.code === 'EPIPE') {
+                // Silently ignore pipe errors - common when output stream is closed
+                return;
+            }
+            // Re-throw other errors
+            throw error;
+        });
     }
 
     onReady() {
@@ -97,6 +134,10 @@ class SystemTrayApp {
                 {
                     label: 'Search',
                     click: () => this.showSearch()
+                },
+                {
+                    label: 'Time',
+                    click: () => this.showTime()
                 },
                 {
                     label: 'Settings',
@@ -291,10 +332,88 @@ class SystemTrayApp {
         }
     }
 
-    showSettings() {
+    showTime() {
+        try {
+            if (this.settingsWindow) {
+                this.settingsWindow.hide();
+            }
+            if (this.searchWindow) {
+                this.searchWindow.hide();
+            }
+
+            if (!this.timeWindow) {
+                // Calculate 3/4 of screen height for time converter
+                const { screen } = require('electron');
+                const { height: screenHeight, width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+                const windowWidth = 900;
+                const windowHeight = Math.floor(screenHeight * 0.75);
+
+                this.timeWindow = new BrowserWindow({
+                    width: windowWidth,
+                    height: windowHeight,
+                    minWidth: 800,
+                    minHeight: 600,
+                    frame: false,
+                    // No titleBarStyle at all - let frame: false handle it
+                    alwaysOnTop: true,
+                    skipTaskbar: true,
+                    resizable: false,
+                    show: false,  // Don't show until ready
+                    webPreferences: {
+                        nodeIntegration: true,
+                        contextIsolation: false,
+                        sandbox: false
+                    }
+                });
+
+                const timePath = path.join(__dirname, 'renderer/time.html');
+                console.log('Loading time window from:', timePath);
+                console.log('Time file exists:', require('fs').existsSync(timePath));
+
+                this.timeWindow.loadFile(timePath);
+
+                this.timeWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                    console.error('Failed to load time window:', errorCode, errorDescription);
+                });
+
+                this.timeWindow.webContents.on('did-finish-load', () => {
+                    console.log('Time window loaded successfully');
+                    this.timeWindow.show();  // Show window after it's loaded
+                });
+
+                // Add error handling to detect JavaScript errors
+                this.timeWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+                    console.log(`[Time Window Console ${level}]:`, message);
+                });
+
+                this.timeWindow.webContents.on('preload-error', (event, preloadPath, error) => {
+                    console.error('Time window preload error:', error);
+                });
+
+                this.timeWindow.on('closed', () => {
+                    this.timeWindow = null;
+                });
+
+                // Position window at top-center of screen (same as search window)
+                const xPos = Math.floor((screenWidth - windowWidth) / 2);
+                this.timeWindow.setPosition(xPos, 50); // Position at top-center
+            }
+
+            this.timeWindow.show();
+            this.timeWindow.focus();
+
+        } catch (error) {
+            console.error('Failed to show time window:', error);
+        }
+    }
+
+    showSettings(focusTab = null) {
         try {
             if (this.searchWindow) {
                 this.searchWindow.hide();
+            }
+            if (this.timeWindow) {
+                this.timeWindow.hide();
             }
 
             if (!this.settingsWindow) {
@@ -320,8 +439,21 @@ class SystemTrayApp {
                     console.error('Failed to load settings window:', errorCode, errorDescription);
                 });
 
+                // Add error handling to detect JavaScript errors in settings window
+                this.settingsWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+                    console.log(`[Settings Window Console ${level}]:`, message);
+                });
+
+                this.settingsWindow.webContents.on('preload-error', (event, preloadPath, error) => {
+                    console.error('Settings window preload error:', error);
+                });
+
                 this.settingsWindow.webContents.on('did-finish-load', () => {
                     console.log('Settings window loaded successfully');
+                    // Send focus tab information if specified
+                    if (focusTab) {
+                        this.settingsWindow.webContents.send('focus-tab', focusTab);
+                    }
                 });
 
                 this.settingsWindow.on('closed', () => {
@@ -351,9 +483,12 @@ class SystemTrayApp {
         // Data source management
         ipcMain.handle('get-sources', async () => {
             try {
-                return this.dataManager.getSources();
+                console.log('IPC: get-sources called');
+                const sources = this.dataManager.getSources();
+                console.log('IPC: get-sources returning', sources.length, 'sources');
+                return sources;
             } catch (error) {
-                console.error('Get sources error:', error);
+                console.error('IPC: Get sources error:', error);
                 return [];
             }
         });
@@ -400,12 +535,25 @@ class SystemTrayApp {
             }
         });
 
+        ipcMain.handle('close-time', () => {
+            if (this.timeWindow) {
+                this.timeWindow.hide();
+            }
+        });
+
         ipcMain.handle('open-settings', () => {
             this.showSettings();
         });
 
         ipcMain.handle('minimize-window', (event, windowName) => {
-            const window = windowName === 'search' ? this.searchWindow : this.settingsWindow;
+            let window;
+            if (windowName === 'search') {
+                window = this.searchWindow;
+            } else if (windowName === 'time') {
+                window = this.timeWindow;
+            } else {
+                window = this.settingsWindow;
+            }
             if (window) {
                 window.minimize();
             }
@@ -461,6 +609,33 @@ class SystemTrayApp {
             } catch (error) {
                 console.error('Clear cache error:', error);
                 return { success: false, error: error.message };
+            }
+        });
+
+        ipcMain.handle('show-open-dialog', async (event, options) => {
+            try {
+                const { dialog } = require('electron');
+                const result = await dialog.showOpenDialog(this.settingsWindow, options);
+                return result;
+            } catch (error) {
+                console.error('Show open dialog error:', error);
+                throw error;
+            }
+        });
+
+        // Time window functionality
+        ipcMain.on('open-settings', () => {
+            this.showSettings();
+        });
+
+        ipcMain.on('open-settings-with-time-focus', () => {
+            this.showSettings('time'); // Focus on Time converter tab
+        });
+
+        ipcMain.on('close-time-window', () => {
+            if (this.timeWindow) {
+                this.timeWindow.close();
+                this.timeWindow = null;
             }
         });
     }

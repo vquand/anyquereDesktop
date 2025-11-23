@@ -6,15 +6,18 @@ const { parse } = require('csv-parse/sync');
 class DataManager {
     constructor() {
         this.configPath = path.join(__dirname, '../config.json');
-        this.config = {};
+        this.config = { sources: [] }; // Initialize with empty sources
         this.dataCache = new Map(); // Cache loaded data
+        console.log('DataManager: Initializing...');
         this.loadConfig();
     }
 
     async loadConfig() {
         try {
+            console.log('DataManager: Loading config from', this.configPath);
             const data = await fs.readFile(this.configPath, 'utf8');
             this.config = JSON.parse(data);
+            console.log('DataManager: Config loaded successfully, sources:', this.config.sources?.length || 0);
             // Ensure settings structure exists
             if (!this.config.settings) {
                 this.config.settings = {
@@ -26,7 +29,7 @@ class DataManager {
                 await this.saveConfig();
             }
         } catch (error) {
-            console.log('Config file not found or invalid, creating new one');
+            console.log('DataManager: Config file not found or invalid, creating new one:', error.message);
             this.config = {
                 settings: {
                     autoStart: false,
@@ -54,6 +57,7 @@ class DataManager {
     }
 
     getSources() {
+        console.log('DataManager: getSources called, returning', this.config.sources?.length || 0, 'sources');
         return this.config.sources || [];
     }
 

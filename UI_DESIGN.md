@@ -11,25 +11,29 @@ This document outlines the user interface design for the Anyquere Desktop applic
 ### Layout & Components
 
 *   **Header**: Title "Anyquere Settings" with window controls
-*   **Tabbed Interface**:
-    *   **📁 Data Sources Tab**: Main configuration interface
-    *   **⚙️ General Tab**: Application preferences
+*   **Tabbed Interface** (Streamlined 3-tab design):
+    *   **📁 File Search Tab**: CSV and Google Sheets search configuration
+    *   **⏰ Time Converter Tab**: Time zone conversion settings and preferences
     *   **ℹ️ About Tab**: Application information
 
-#### Data Sources Tab
+#### File Search Tab (Data Sources Configuration)
 *   **Info Banner**: Helpful guidance text at the top
 *   **Sources Table**: Displays currently configured sources with modern styling
-    *   Columns: `Alias` (e.g., "cdn"), `Type` (local/Google Sheets), `Path/URL`, `Search Column`, `Status` (✅ Configured/⚠️ Setup required/🔄 Testing)
-    *   Checkbox selection for batch operations
+    *   Columns: `Alias` (e.g., "cdn"), `Type` (local/Google Sheets), `Status` (Connected/Error/Testing), `Actions`
+    *   **Inline Action Buttons**: Each row contains direct action buttons:
+        *   `[✏️ Edit]` - Modify source configuration
+        *   `[🔄 Test]` - Test connection and data loading
+        *   `[👁️ Preview]` - Open data preview modal for this source
+        *   `[🗑️ Delete]` - Remove data source
     *   Hover effects and row highlighting
-*   **Action Buttons**: Modern button design with icons
-    *   `[➕ Add]` - Create new data source
-    *   `[✏️ Edit]` - Modify selected source
-    *   `[🗑️ Delete]` - Remove selected sources
-    *   `[🔄 Refresh]` - Reload data from sources
-*   **Import/Export**: Configuration management buttons
-    *   `[📤 Export]` - Save configuration to JSON
-    *   `[📥 Import]` - Load configuration from JSON
+*   **Global Action Buttons**: Simplified toolbar
+    *   `[➕ Add Source]` - Create new data source (opens modal dialog)
+*   **Data Preview Modal**: Contextual dialog opened from inline preview buttons
+    *   **Source Information**: Displays alias, type, path, and row count
+    *   **Configurable Preview**: User can select number of rows to display
+    *   **Interactive Table**: Shows data with column indicators (🔍 search column, 📋 result columns)
+    *   **Export Functionality**: Download preview data as CSV
+    *   **Real-time Refresh**: Reload data from source
 
 #### Advanced Edit Dialog (3 Tabs)
 **Modern modal dialog** with smooth transitions and validation feedback.
@@ -48,26 +52,6 @@ This document outlines the user interface design for the Anyquere Desktop applic
     *   Maximum Results slider control
     *   Real-time preview of settings
 
-*   **👁️ Data Preview Tab**:
-    *   Live data preview table (first 10 rows)
-    *   Responsive table design with horizontal scrolling
-    *   Row and column count information
-    *   Data format validation indicators
-    *   Export preview functionality
-
-#### General Settings Tab
-*   **Startup Options**:
-    *   "Launch at login" toggle switch
-    *   "Show search window on startup" toggle switch
-*   **Hotkey Configuration**:
-    *   Display current global shortcut (Cmd+Space default)
-    *   List of alternative shortcuts
-    *   Shortcut reset functionality
-*   **Cache Management**:
-    *   Clear cache button with confirmation
-    *   Cache size and status information
-    *   Per-source cache controls
-
 #### About Tab
 *   **Application Information**:
     *   Version number and build info
@@ -77,6 +61,47 @@ This document outlines the user interface design for the Anyquere Desktop applic
     *   Links to documentation and GitHub
     *   Bug reporting information
     *   Feature request guidance
+
+#### Time Converter Tab
+**Purpose**: Configure time zone conversion settings, default formats, and behavior preferences.
+
+*   **Default Time Zones Section**:
+    *   Pre-populated checkboxes for major world time zones
+    *   Options: Local Time (auto-detect), UTC, New York, London, Paris, Tokyo, Sydney, Los Angeles, Chicago, Dubai
+    *   Add custom time zones functionality with validation
+    *   Visual feedback for selected/deselected states
+    *   Right-click to remove custom time zones
+
+*   **Display Formats Section**:
+    *   Format selection checkboxes with example formats:
+        *   ISO 8601 (2025-10-15T14:30:00Z)
+        *   Unix Timestamp (1756107358)
+        *   RFC 2822 (Tue, 15 Oct 2025 14:30:00 GMT)
+        *   Local Format (10/15/2025, 2:30:00 PM)
+        *   Date Only (10/15/2025)
+        *   Time Only (2:30:00 PM)
+    *   Real-time preview of format selections
+
+*   **Behavior Settings Section**:
+    *   Auto-detect time strings in clipboard
+    *   Show quick example formats
+    *   Copy converted time to clipboard when clicked
+    *   Default input format selection (Auto-detect, ISO 8601, Unix, US, European, Natural)
+    *   Time zone display format (Abbreviation, UTC Offset, Both)
+
+*   **Shortcuts & Quick Actions Section**:
+    *   Configure keyboard shortcuts for time converter
+    *   Enable/disable "Current Time" quick action button
+    *   Clipboard time detection toggle
+    *   Global hotkey configuration (Cmd/Ctrl+Shift+T)
+
+*   **Visual Design**:
+    *   Grid layout with organized sections
+    *   Card-based design with subtle shadows
+    *   Color-coded section headers with blue accent bars
+    *   Smooth transitions and hover effects
+    *   Responsive design for different screen sizes
+    *   Consistent with overall application design language
 
 ---
 
@@ -139,7 +164,80 @@ This document outlines the user interface design for the Anyquere Desktop applic
 
 ---
 
-## 3. System Tray Integration
+## 3. Time Converter Interface
+
+**Purpose**: Intelligent time zone conversion with multi-format support.
+**Access**: System Tray menu ("Time") or configurable keyboard shortcut (Cmd/Ctrl+Shift+T).
+**Behavior**: Dedicated window with smart time parsing and multi-location conversion.
+**Technology**: Electron window with advanced time parsing algorithms and real-time conversion.
+
+### Layout & Components
+
+*   **Header Section**:
+    *   **Title**: "⏰ Time Converter" with modern typography
+    *   **Description**: "Convert time between multiple time zones and formats"
+    *   **Clean design**: Dark theme with blue accent colors
+
+*   **Input Section**:
+    *   **Large Input Field**:
+        *   **Placeholder**: "Paste or type time (e.g., 2025-10-15T14:30:00Z, 1756107358, Oct 15, 2025 2:30 PM)"
+        *   **Auto-focus**: Automatically focused when window opens
+        *   **Smart parsing**: Detects multiple time formats automatically
+        *   **Real-time validation**: Shows parsing status as you type
+
+    *   **Action Buttons**:
+        *   **Convert** - Main conversion button
+        *   **Current Time** - Quick action to convert current time
+        *   **Clear** - Reset all inputs and results
+
+*   **Example Format Chips**:
+    *   **Interactive examples**: Click to insert example time strings
+    *   **Formats available**: ISO 8601, Unix Timestamp, US Format, European Format, Natural Language, Relative Time
+    *   **Visual feedback**: Hover effects and selection states
+
+*   **Multiple Formats Section**:
+    *   **Grid layout**: Organized display of converted time formats
+    *   **Format cards**: Click to copy individual formats to clipboard
+    *   **Formats displayed**: ISO 8601, Unix Timestamp, RFC 2822, Local Format, Date Only, Time Only
+    *   **Copy feedback**: Visual indication when format is copied
+
+*   **Time Zones Section**:
+    *   **Location cards**: Display converted time in multiple time zones
+    *   **Default locations**: Local Time, UTC, New York, London, Paris, Tokyo, Sydney, Los Angeles, Chicago, Dubai
+    *   **Custom time zones**: User-configurable from settings
+    *   **DST awareness**: Automatically handles daylight saving time
+    *   **Copy functionality**: Click any location card to copy formatted time
+    *   **Copy all button**: Export all conversions to clipboard
+
+*   **Smart Features**:
+    *   **Intelligent parsing**: Supports 10+ time formats automatically
+    *   **Multi-location conversion**: Simultaneous display in multiple time zones
+    *   **Click-to-copy**: Easy clipboard integration
+    *   **Error handling**: Clear error messages for invalid time strings
+    *   **Loading states**: Visual feedback during conversion
+
+### Time Parser Capabilities
+
+*   **ISO 8601**: 2025-10-15T14:30:00Z, 2025-10-15T14:30:00+08:00
+*   **Unix Timestamps**: 1756107358 (seconds), 1756107358000 (milliseconds)
+*   **US Format**: 10/15/2025 2:30 PM, October 15, 2025
+*   **European Format**: 15.10.2025 14:30
+*   **Natural Language**: "Oct 15, 2025 2:30 PM", "tomorrow 3 PM"
+*   **Relative Time**: "today", "tomorrow", "yesterday"
+*   **Time Only**: "2:30 PM", "14:30"
+
+### Visual Design
+
+*   **Dark theme**: Professional dark color scheme optimized for extended use
+*   **Card-based layout**: Organized sections with subtle shadows and rounded corners
+*   **Responsive design**: Adapts to different screen sizes and window dimensions
+*   **Smooth animations**: Loading states, hover effects, and transitions
+*   **Accessibility**: High contrast, keyboard navigation, and screen reader support
+*   **Consistent styling**: Matches overall application design language
+
+---
+
+## 4. System Tray Integration
 
 **Purpose**: Background access and quick actions.
 **Technology**: Native system tray integration with custom menu.
@@ -147,7 +245,8 @@ This document outlines the user interface design for the Anyquere Desktop applic
 ### Tray Menu
 *   **App Icon**: Custom "aQ" text icon that adapts to system theme
 *   **Context Menu**: Clean, native-styled context menu
-    *   **Search** - Open search interface
+    *   **Search** - Open CSV and Google Sheets search interface
+    *   **Time** - Open time zone conversion interface
     *   **Settings** - Open configuration window
     *   **Separator**
     *   **Quit** - Exit application
@@ -222,4 +321,41 @@ This document outlines the user interface design for the Anyquere Desktop applic
 
 ---
 
-*This design document reflects the current Electron-based implementation with modern UI/UX principles and cross-platform compatibility.*
+## 6. Recent UI Improvements (Latest Version)
+
+### 🎯 **Streamlined Settings Interface**
+- **Reduced Tab Count**: Simplified from 4 tabs to 3 essential tabs (File Search, Time Converter, About)
+- **Removed Data Preview Tab**: Replaced with contextual modal for better workflow
+- **Cleaner Navigation**: More focused and less overwhelming interface
+
+### 👁️ **Enhanced Data Preview System**
+- **Inline Preview Buttons**: Each data source row now has its own "Preview" button
+- **Contextual Modal**: Data preview opens as a modal dialog specific to the selected source
+- **One-Click Access**: Users can preview any source directly without selection steps
+- **Rich Preview Features**:
+  - Configurable number of preview rows
+  - Column indicators (🔍 search column, 📋 result columns)
+  - Export to CSV functionality
+  - Real-time data refresh
+
+### 🔧 **Improved User Experience**
+- **Simplified Toolbar**: Reduced to essential "Add Source" button only
+- **Inline Actions**: All source operations (Edit, Test, Preview, Delete) available in-row
+- **Better Modal Workflow**: File dialogs, source editing, and data preview all use consistent modal patterns
+- **Responsive Design**: Better support for different screen sizes and high DPI displays
+
+### 📊 **Table Design Updates**
+- **Four Columns**: Alias | Type | Status | Actions (was previously more complex)
+- **Action Button Set**: Edit | Test | Preview | Delete (was previously separate/global)
+- **Status Indicators**: Clear visual feedback for connection states
+- **Hover Effects**: Enhanced interactivity and visual feedback
+
+### 🎨 **Visual Consistency**
+- **Modern Button Design**: Consistent styling across all interactive elements
+- **Modal Consistency**: All modals follow the same design patterns
+- **Icon Usage**: Meaningful icons for different actions and states
+- **Cross-Platform Compatibility**: Native feel on macOS, Windows, and Linux
+
+---
+
+*This design document reflects the current Electron-based implementation with modern UI/UX principles, cross-platform compatibility, and the latest improvements focused on streamlined workflows and enhanced user experience.*

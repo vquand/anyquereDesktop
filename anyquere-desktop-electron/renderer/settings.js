@@ -1,13 +1,16 @@
-const { ipcRenderer, dialog } = require('electron');
+const { ipcRenderer } = require('electron');
 
 class SettingsWindow {
     constructor() {
         this.sources = [];
         this.selectedSource = null;
+        this.timeSettings = this.loadTimeSettings();
 
         this.initElements();
         this.initEventListeners();
         this.loadSources();
+        this.initTimeSettings();
+        this.initIPCListeners();
     }
 
     initElements() {
@@ -20,11 +23,41 @@ class SettingsWindow {
         this.addSourceBtn = document.getElementById('addSourceBtn');
         this.removeSourceBtn = document.getElementById('removeSourceBtn');
         this.testSourceBtn = document.getElementById('testSourceBtn');
+        // Note: previewSourceBtn removed from HTML as we now have inline preview buttons
 
-        // Data preview tab
-        this.previewSourceSelect = document.getElementById('previewSourceSelect');
-        this.loadPreviewBtn = document.getElementById('loadPreviewBtn');
-        this.previewContent = document.getElementById('previewContent');
+        // Debug: Check if elements are found
+        console.log('Elements found:', {
+            addSourceBtn: !!this.addSourceBtn,
+            addSourceModal: !!document.getElementById('addSourceModal'),
+            saveSourceBtn: !!document.getElementById('saveSourceBtn'),
+            cancelSourceBtn: !!document.getElementById('cancelSourceBtn'),
+            browseBtn: !!document.getElementById('browseBtn'),
+            sourcesTableBody: !!this.sourcesTableBody,
+            dataPreviewModal: !!document.getElementById('dataPreviewModal')
+        });
+
+        // Data Preview Modal
+        this.dataPreviewModal = document.getElementById('dataPreviewModal');
+        this.previewSourceName = document.getElementById('previewSourceName');
+        this.previewSourceType = document.getElementById('previewSourceType');
+        this.previewSourcePath = document.getElementById('previewSourcePath');
+        this.previewRows = document.getElementById('previewRows');
+        this.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
+        this.exportPreviewBtn = document.getElementById('exportPreviewBtn');
+        this.previewLoading = document.getElementById('previewLoading');
+        this.previewError = document.getElementById('previewError');
+        this.previewErrorText = document.getElementById('previewErrorText');
+        this.previewTableContainer = document.getElementById('previewTableContainer');
+        this.previewTable = document.getElementById('previewTable');
+        this.previewTableHead = document.getElementById('previewTableHead');
+        this.previewTableBody = document.getElementById('previewTableBody');
+        this.previewStats = document.getElementById('previewStats');
+        this.totalRows = document.getElementById('totalRows');
+        this.totalColumns = document.getElementById('totalColumns');
+        this.lastLoaded = document.getElementById('lastLoaded');
+        this.previewInfo = document.getElementById('previewInfo');
+        this.closePreviewModal = document.getElementById('closePreviewModal');
+        this.closePreviewFooterBtn = document.getElementById('closePreviewFooterBtn');
 
         // Footer buttons
         this.saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -47,6 +80,31 @@ class SettingsWindow {
         this.headerRow = document.getElementById('headerRow');
         this.maxResults = document.getElementById('maxResults');
         this.resultCols = document.getElementById('resultCols');
+
+        // Time converter tab elements
+        this.timezoneList = document.getElementById('timezoneList');
+        this.customTimezone = document.getElementById('customTimezone');
+        this.addTimezoneBtn = document.getElementById('addTimezoneBtn');
+
+        // Format options
+        this.showISO8601 = document.getElementById('showISO8601');
+        this.showUnixTimestamp = document.getElementById('showUnixTimestamp');
+        this.showRFC2822 = document.getElementById('showRFC2822');
+        this.showLocalFormat = document.getElementById('showLocalFormat');
+        this.showDateOnly = document.getElementById('showDateOnly');
+        this.showTimeOnly = document.getElementById('showTimeOnly');
+
+        // Behavior settings
+        this.autoDetectTime = document.getElementById('autoDetectTime');
+        this.showQuickExamples = document.getElementById('showQuickExamples');
+        this.copyOnClick = document.getElementById('copyOnClick');
+        this.defaultInputFormat = document.getElementById('defaultInputFormat');
+        this.timeZoneDisplayFormat = document.getElementById('timeZoneDisplayFormat');
+
+        // Shortcuts
+        this.timeShortcut = document.getElementById('timeShortcut');
+        this.showCurrentTimeQuick = document.getElementById('showCurrentTimeQuick');
+        this.enableClipboardDetection = document.getElementById('enableClipboardDetection');
     }
 
     initEventListeners() {
@@ -58,71 +116,177 @@ class SettingsWindow {
         });
 
         // Sources tab
-        this.addSourceBtn.addEventListener('click', () => {
-            this.showAddSourceModal();
-        });
+        if (this.addSourceBtn) {
+            this.addSourceBtn.addEventListener('click', () => {
+                this.showAddSourceModal();
+            });
+        }
 
-        this.removeSourceBtn.addEventListener('click', () => {
-            this.removeSelectedSource();
-        });
+        if (this.removeSourceBtn) {
+            this.removeSourceBtn.addEventListener('click', () => {
+                this.removeSelectedSource();
+            });
+        }
 
-        this.testSourceBtn.addEventListener('click', () => {
-            this.testSelectedSource();
-        });
+        if (this.testSourceBtn) {
+            this.testSourceBtn.addEventListener('click', () => {
+                this.testSelectedSource();
+            });
+        }
 
-        // Data preview tab
-        this.loadPreviewBtn.addEventListener('click', () => {
-            this.loadPreview();
-        });
-
+        
         // Footer buttons
-        this.saveSettingsBtn.addEventListener('click', () => {
-            this.saveSettings();
-        });
+        if (this.saveSettingsBtn) {
+            this.saveSettingsBtn.addEventListener('click', () => {
+                this.saveSettings();
+            });
+        }
 
-        this.closeSettingsBtn.addEventListener('click', () => {
-            this.closeWindow();
-        });
+        if (this.closeSettingsBtn) {
+            this.closeSettingsBtn.addEventListener('click', () => {
+                this.closeWindow();
+            });
+        }
 
         // Modal events
-        this.modalClose.addEventListener('click', () => {
-            this.hideAddSourceModal();
-        });
+        if (this.modalClose) {
+            this.modalClose.addEventListener('click', () => {
+                this.hideAddSourceModal();
+            });
+        }
 
-        this.cancelSourceBtn.addEventListener('click', () => {
-            this.hideAddSourceModal();
-        });
+        if (this.cancelSourceBtn) {
+            this.cancelSourceBtn.addEventListener('click', () => {
+                this.hideAddSourceModal();
+            });
+        }
 
-        this.saveSourceBtn.addEventListener('click', () => {
-            this.addSource();
-        });
+        if (this.saveSourceBtn) {
+            this.saveSourceBtn.addEventListener('click', () => {
+                this.addSource();
+            });
+        }
 
-        this.testNewSourceBtn.addEventListener('click', () => {
-            this.testNewSource();
-        });
+        if (this.testNewSourceBtn) {
+            this.testNewSourceBtn.addEventListener('click', () => {
+                this.testNewSource();
+            });
+        }
 
-        this.browseBtn.addEventListener('click', () => {
-            this.browseForFile();
-        });
+        if (this.browseBtn) {
+            this.browseBtn.addEventListener('click', () => {
+                this.browseForFile();
+            });
+        }
 
-        // Form type change
-        this.sourceType.addEventListener('change', () => {
-            this.updatePathPlaceholder();
-        });
+        // Data preview modal events
+        if (this.closePreviewModal) {
+            this.closePreviewModal.addEventListener('click', () => {
+                this.hideDataPreviewModal();
+            });
+        }
+
+        if (this.refreshPreviewBtn) {
+            this.refreshPreviewBtn.addEventListener('click', () => {
+                this.refreshPreview();
+            });
+        }
+
+        if (this.exportPreviewBtn) {
+            this.exportPreviewBtn.addEventListener('click', () => {
+                this.exportPreviewData();
+            });
+        }
+
+        if (this.closePreviewFooterBtn) {
+            this.closePreviewFooterBtn.addEventListener('click', () => {
+                this.hideDataPreviewModal();
+            });
+        }
+
+        // Form change events
+        if (this.sourceType) {
+            this.sourceType.addEventListener('change', () => {
+                this.updatePathPlaceholder();
+            });
+        }
 
         // Close modal on background click
-        this.addSourceModal.addEventListener('click', (e) => {
-            if (e.target === this.addSourceModal) {
-                this.hideAddSourceModal();
+        if (this.addSourceModal) {
+            this.addSourceModal.addEventListener('click', (e) => {
+                if (e.target === this.addSourceModal) {
+                    this.hideAddSourceModal();
+                }
+            });
+        }
+
+        
+        // Sources table click events
+        if (this.sourcesTableBody) {
+            this.sourcesTableBody.addEventListener('click', (e) => {
+                const row = e.target.closest('tr');
+                if (row) {
+                    this.selectSource(row);
+                }
+            });
+        }
+
+        // Time converter event listeners
+        if (this.addTimezoneBtn) {
+            this.addTimezoneBtn.addEventListener('click', () => {
+                this.addCustomTimezone();
+            });
+        }
+
+        if (this.customTimezone) {
+            this.customTimezone.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.addCustomTimezone();
+                }
+            });
+        }
+
+        // Format change listeners
+        [this.showISO8601, this.showUnixTimestamp, this.showRFC2822, this.showLocalFormat, this.showDateOnly, this.showTimeOnly].forEach(checkbox => {
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    this.saveTimeSettings();
+                });
             }
         });
 
-        // Sources table click events
-        this.sourcesTableBody.addEventListener('click', (e) => {
-            const row = e.target.closest('tr');
-            if (row) {
-                this.selectSource(row);
+        // Behavior change listeners
+        [this.autoDetectTime, this.showQuickExamples, this.copyOnClick].forEach(checkbox => {
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    this.saveTimeSettings();
+                });
             }
+        });
+
+        [this.defaultInputFormat, this.timeZoneDisplayFormat, this.timeShortcut].forEach(select => {
+            if (select) {
+                select.addEventListener('change', () => {
+                    this.saveTimeSettings();
+                });
+            }
+        });
+
+        // Timezone checkbox listeners
+        if (this.timezoneList) {
+            this.timezoneList.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox' && e.target.dataset.timezone) {
+                    this.saveTimeSettings();
+                }
+            });
+        }
+    }
+
+    initIPCListeners() {
+        // Listen for focus tab messages from main process
+        ipcRenderer.on('focus-tab', (event, tabName) => {
+            console.log('Received focus tab request:', tabName);
+            this.switchTab(tabName);
         });
     }
 
@@ -136,27 +300,27 @@ class SettingsWindow {
         this.tabContents.forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}-tab`);
         });
-
-        // Update preview sources when switching to data tab
-        if (tabName === 'data') {
-            this.updatePreviewSources();
-        }
     }
 
     async loadSources() {
         try {
+            console.log('Settings: loadSources called');
             this.sources = await ipcRenderer.invoke('get-sources');
+            console.log('Settings: received sources:', this.sources.length, this.sources);
             this.updateSourcesTable();
+            console.log('Settings: updateSourcesTable completed');
         } catch (error) {
-            console.error('Failed to load sources:', error);
+            console.error('Settings: Failed to load sources:', error);
             this.showError('Failed to load data sources');
         }
     }
 
     updateSourcesTable() {
+        console.log('Settings: updateSourcesTable called with', this.sources.length, 'sources');
         this.sourcesTableBody.innerHTML = '';
 
         if (this.sources.length === 0) {
+            console.log('Settings: No sources to display');
             const row = document.createElement('tr');
             row.innerHTML = '<td colspan="4" style="text-align: center; color: #666;">No data sources configured</td>';
             this.sourcesTableBody.appendChild(row);
@@ -177,6 +341,7 @@ class SettingsWindow {
                 <td class="actions-cell">
                     <button class="btn btn-secondary" onclick="settingsWindow.editSource('${source.alias}')">Edit</button>
                     <button class="btn btn-secondary" onclick="settingsWindow.testSource('${source.alias}')">Test</button>
+                    <button class="btn btn-secondary" onclick="settingsWindow.previewSource('${source.alias}')">Preview</button>
                     <button class="btn btn-danger" onclick="settingsWindow.deleteSource('${source.alias}')">Delete</button>
                 </td>
             `;
@@ -185,8 +350,12 @@ class SettingsWindow {
         });
 
         // Hide the old remove selected button since we now have inline delete buttons
-        this.removeSourceBtn.style.display = 'none';
-        this.testSourceBtn.style.display = 'none';
+        if (this.removeSourceBtn) {
+            this.removeSourceBtn.style.display = 'none';
+        }
+        if (this.testSourceBtn) {
+            this.testSourceBtn.style.display = 'none';
+        }
     }
 
     getStatusClass(source) {
@@ -256,6 +425,54 @@ class SettingsWindow {
         const source = this.sources.find(s => s.alias === alias);
         if (source) {
             await this.testSourceConnection(source);
+        }
+    }
+
+    async previewSource(alias) {
+        const source = this.sources.find(s => s.alias === alias);
+        if (!source) {
+            this.showError('Source not found');
+            return;
+        }
+
+        this.previewSourceName.textContent = source.alias;
+        this.dataPreviewModal.classList.add('show');
+        await this.refreshPreviewForSource(source);
+    }
+
+    async refreshPreviewForSource(source) {
+        const maxRows = parseInt(this.previewRows.value) || 10;
+
+        // Update preview info using the span elements
+        if (this.previewSourceName) this.previewSourceName.textContent = source.alias;
+        if (this.previewSourceType) this.previewSourceType.textContent = source.type;
+        if (this.previewSourcePath) this.previewSourcePath.textContent = source.path;
+
+        // Show loading state
+        if (this.previewLoading) {
+            this.previewLoading.style.display = 'flex';
+        }
+        if (this.previewError) {
+            this.previewError.style.display = 'none';
+        }
+        if (this.previewTableContainer) {
+            this.previewTableContainer.style.display = 'none';
+        }
+
+        try {
+            const data = await ipcRenderer.invoke('load-data', source.alias);
+            if (data && data.length > 0) {
+                this.displayPreviewData(data, source, maxRows);
+            } else {
+                this.showPreviewError('No data found in this source');
+            }
+        } catch (error) {
+            console.error('Preview load error:', error);
+            this.showPreviewError(`Failed to load data: ${error.message}`);
+        } finally {
+            if (this.previewLoading) {
+                this.previewLoading.style.display = 'none';
+            }
         }
     }
 
@@ -382,7 +599,7 @@ class SettingsWindow {
 
     async browseForFile() {
         try {
-            const result = await dialog.showOpenDialog({
+            const result = await ipcRenderer.invoke('show-open-dialog', {
                 properties: ['openFile'],
                 filters: [
                     { name: 'CSV Files', extensions: ['csv'] },
@@ -514,104 +731,173 @@ class SettingsWindow {
         };
     }
 
-    updatePreviewSources() {
-        this.previewSourceSelect.innerHTML = '<option value="">Select a source...</option>';
-
-        this.sources.forEach(source => {
-            const option = document.createElement('option');
-            option.value = source.alias;
-            option.textContent = `${source.alias} (${source.type})`;
-            this.previewSourceSelect.appendChild(option);
-        });
-    }
-
-    async loadPreview() {
-        const selectedAlias = this.previewSourceSelect.value;
-        if (!selectedAlias) {
-            this.showError('Please select a data source');
+    // Data Preview Modal Methods
+    async showDataPreview() {
+        const selectedSource = this.getSelectedSource();
+        if (!selectedSource) {
+            this.showError('Please select a data source to preview');
             return;
         }
 
-        this.loadPreviewBtn.disabled = true;
-        this.loadPreviewBtn.textContent = 'Loading...';
-        this.previewContent.innerHTML = '<div class="loading">Loading data...</div>';
+        this.previewSourceName.textContent = selectedSource.alias;
+        this.dataPreviewModal.classList.add('show');
+        await this.refreshPreview();
+    }
 
-        try {
-            const data = await ipcRenderer.invoke('load-data', selectedAlias);
-            if (data && data.length > 0) {
-                this.displayDataPreview(data, selectedAlias);
-            } else {
-                this.previewContent.innerHTML = '<div class="no-data">No data found</div>';
-            }
-        } catch (error) {
-            console.error('Load preview error:', error);
-            this.previewContent.innerHTML = `<div class="error">Failed to load data: ${error.message}</div>`;
-        } finally {
-            this.loadPreviewBtn.disabled = false;
-            this.loadPreviewBtn.textContent = 'Load Preview';
+    hideDataPreviewModal() {
+        this.dataPreviewModal.classList.remove('show');
+    }
+
+    showPreviewError(message) {
+        if (this.previewError && this.previewErrorText) {
+            this.previewErrorText.textContent = message;
+            this.previewError.style.display = 'block';
+        }
+        if (this.previewTableContainer) {
+            this.previewTableContainer.style.display = 'none';
         }
     }
 
-    displayDataPreview(data, sourceAlias) {
-        const source = this.sources.find(s => s.alias === sourceAlias);
-        const maxRows = 100; // Limit preview rows
+    getSelectedSource() {
+        const selectedRow = this.sourcesTable.querySelector('tr.selected');
+        if (!selectedRow) {
+            return null;
+        }
+
+        const alias = selectedRow.dataset.alias;
+        return this.sources.find(source => source.alias === alias);
+    }
+
+    async refreshPreview() {
+        const selectedSource = this.getSelectedSource();
+        if (!selectedSource) {
+            this.hideDataPreviewModal();
+            return;
+        }
+
+        await this.refreshPreviewForSource(selectedSource);
+    }
+
+    displayPreviewData(data, source, maxRows) {
         const previewData = data.slice(0, maxRows);
 
         if (previewData.length === 0) {
-            this.previewContent.innerHTML = '<div class="no-data">No data to display</div>';
+            this.showPreviewError('No data to display');
             return;
         }
 
         const columns = Object.keys(previewData[0]);
 
-        let html = `
-            <div style="margin-bottom: 15px;">
-                <strong>Source:</strong> ${sourceAlias} |
-                <strong>Total Rows:</strong> ${data.length.toLocaleString()} |
-                <strong>Showing:</strong> ${Math.min(previewData.length, data.length)} rows
-            </div>
-            <div style="overflow-x: auto;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-        `;
-
-        // Add header row with column info
-        columns.forEach((col, index) => {
-            const isSearchCol = source && source.searchCol === index;
-            const isResultCol = source && source.resultCols && source.resultCols.includes(index);
-            html += `<th>${col} ${isSearchCol ? '(search)' : ''} ${isResultCol ? '(result)' : ''}</th>`;
-        });
-
-        html += `
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        // Add data rows
-        previewData.forEach(row => {
-            html += '<tr>';
-            columns.forEach(col => {
-                const value = row[col] || '';
-                html += `<td title="${value}">${value}</td>`;
-            });
-            html += '</tr>';
-        });
-
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        if (data.length > maxRows) {
-            html += `<div style="margin-top: 15px; text-align: center; color: #666;">
-                Showing first ${maxRows} rows of ${data.length.toLocaleString()} total rows
-            </div>`;
+        // Hide error and loading states
+        if (this.previewError) {
+            this.previewError.style.display = 'none';
+        }
+        if (this.previewLoading) {
+            this.previewLoading.style.display = 'none';
         }
 
-        this.previewContent.innerHTML = html;
+        // Show table container
+        if (this.previewTableContainer) {
+            this.previewTableContainer.style.display = 'block';
+        }
+
+        // Update preview info using span elements (already set in refreshPreviewForSource)
+        // Update table head
+        if (this.previewTableHead) {
+            const headerRow = this.previewTableHead.querySelector('tr');
+            headerRow.innerHTML = '';
+
+            columns.forEach((col, index) => {
+                const isSearchCol = source.searchCol === index;
+                const isResultCol = source.resultCols && source.resultCols.includes(index);
+                let colTitle = col;
+                if (isSearchCol) colTitle += ' 🔍';
+                if (isResultCol) colTitle += ' 📋';
+                const th = document.createElement('th');
+                th.textContent = colTitle;
+                th.title = `${col}${isSearchCol ? ' (Search Column)' : ''}${isResultCol ? ' (Result Column)' : ''}`;
+                headerRow.appendChild(th);
+            });
+        }
+
+        // Update table body
+        if (this.previewTableBody) {
+            this.previewTableBody.innerHTML = '';
+
+            previewData.forEach(row => {
+                const tr = document.createElement('tr');
+                columns.forEach(col => {
+                    const value = row[col] || '';
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    td.title = value;
+                    tr.appendChild(td);
+                });
+                this.previewTableBody.appendChild(tr);
+            });
+        }
+
+        // Update preview stats
+        if (this.previewStats) {
+            this.previewStats.innerHTML = `
+                <p><strong>Total Columns:</strong> ${columns.length}</p>
+                <p><strong>Preview Rows:</strong> ${previewData.length}</p>
+                <p><strong>Search Column:</strong> ${columns[source.searchCol] || 'N/A'}</p>
+            `;
+        }
+    }
+
+    async exportPreviewData() {
+        const selectedSource = this.getSelectedSource();
+        if (!selectedSource) {
+            this.showError('No source selected for export');
+            return;
+        }
+
+        try {
+            const data = await ipcRenderer.invoke('load-data', selectedSource.alias);
+            if (data && data.length > 0) {
+                // Create CSV content
+                const columns = Object.keys(data[0]);
+                let csvContent = columns.join(',') + '\n';
+
+                data.forEach(row => {
+                    const values = columns.map(col => {
+                        const value = row[col] || '';
+                        // Escape quotes and wrap in quotes if contains comma or quote
+                        if (value.includes(',') || value.includes('"')) {
+                            return `"${value.replace(/"/g, '""')}"`;
+                        }
+                        return value;
+                    });
+                    csvContent += values.join(',') + '\n';
+                });
+
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${selectedSource.alias}_export.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                this.showSuccess(`Exported ${data.length} rows from ${selectedSource.alias}`);
+            } else {
+                this.showError('No data available to export');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showError('Failed to export data');
+        }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     async saveSettings() {
@@ -631,6 +917,155 @@ class SettingsWindow {
     showSuccess(message) {
         // Simple success notification
         alert(`Success: ${message}`);
+    }
+
+    // Time converter methods
+    loadTimeSettings() {
+        const defaultSettings = {
+            timezones: ['auto', 'UTC', 'America/New_York', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo', 'Australia/Sydney', 'America/Los_Angeles', 'America/Chicago', 'Asia/Dubai'],
+            formats: {
+                showISO8601: true,
+                showUnixTimestamp: true,
+                showRFC2822: true,
+                showLocalFormat: true,
+                showDateOnly: true,
+                showTimeOnly: true
+            },
+            behavior: {
+                autoDetectTime: true,
+                showQuickExamples: true,
+                copyOnClick: true,
+                defaultInputFormat: 'auto',
+                timeZoneDisplayFormat: 'abbreviation'
+            },
+            shortcuts: {
+                timeShortcut: '',
+                showCurrentTimeQuick: true,
+                enableClipboardDetection: true
+            }
+        };
+
+        try {
+            const saved = localStorage.getItem('anyquere-time-settings');
+            return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+        } catch (error) {
+            console.error('Error loading time settings:', error);
+            return defaultSettings;
+        }
+    }
+
+    saveTimeSettings() {
+        try {
+            const settings = {
+                timezones: this.getSelectedTimezones(),
+                formats: {
+                    showISO8601: this.showISO8601.checked,
+                    showUnixTimestamp: this.showUnixTimestamp.checked,
+                    showRFC2822: this.showRFC2822.checked,
+                    showLocalFormat: this.showLocalFormat.checked,
+                    showDateOnly: this.showDateOnly.checked,
+                    showTimeOnly: this.showTimeOnly.checked
+                },
+                behavior: {
+                    autoDetectTime: this.autoDetectTime.checked,
+                    showQuickExamples: this.showQuickExamples.checked,
+                    copyOnClick: this.copyOnClick.checked,
+                    defaultInputFormat: this.defaultInputFormat.value,
+                    timeZoneDisplayFormat: this.timeZoneDisplayFormat.value
+                },
+                shortcuts: {
+                    timeShortcut: this.timeShortcut.value,
+                    showCurrentTimeQuick: this.showCurrentTimeQuick.checked,
+                    enableClipboardDetection: this.enableClipboardDetection.checked
+                }
+            };
+
+            localStorage.setItem('anyquere-time-settings', JSON.stringify(settings));
+            this.timeSettings = settings;
+        } catch (error) {
+            console.error('Error saving time settings:', error);
+            this.showError('Failed to save time settings');
+        }
+    }
+
+    getSelectedTimezones() {
+        const checkboxes = this.timezoneList.querySelectorAll('input[type="checkbox"][data-timezone]');
+        return Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.dataset.timezone);
+    }
+
+    initTimeSettings() {
+        // Set timezone checkboxes
+        this.timeSettings.timezones.forEach(timezone => {
+            const checkbox = this.timezoneList.querySelector(`input[data-timezone="${timezone}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            } else if (!['auto', 'UTC'].includes(timezone)) {
+                this.addTimezoneCheckbox(timezone);
+            }
+        });
+
+        // Set format checkboxes
+        Object.keys(this.timeSettings.formats).forEach(format => {
+            const checkbox = document.getElementById(`show${format}`);
+            if (checkbox) {
+                checkbox.checked = this.timeSettings.formats[format];
+            }
+        });
+
+        // Set behavior settings
+        this.autoDetectTime.checked = this.timeSettings.behavior.autoDetectTime;
+        this.showQuickExamples.checked = this.timeSettings.behavior.showQuickExamples;
+        this.copyOnClick.checked = this.timeSettings.behavior.copyOnClick;
+        this.defaultInputFormat.value = this.timeSettings.behavior.defaultInputFormat;
+        this.timeZoneDisplayFormat.value = this.timeSettings.behavior.timeZoneDisplayFormat;
+
+        // Set shortcut settings
+        this.timeShortcut.value = this.timeSettings.shortcuts.timeShortcut;
+        this.showCurrentTimeQuick.checked = this.timeSettings.shortcuts.showCurrentTimeQuick;
+        this.enableClipboardDetection.checked = this.timeSettings.shortcuts.enableClipboardDetection;
+    }
+
+    addCustomTimezone() {
+        const timezone = this.customTimezone.value.trim();
+        if (!timezone) {
+            this.showError('Please enter a timezone');
+            return;
+        }
+
+        if (this.timezoneList.querySelector(`input[data-timezone="${timezone}"]`)) {
+            this.showError('This timezone is already added');
+            return;
+        }
+
+        this.addTimezoneCheckbox(timezone);
+        this.customTimezone.value = '';
+        this.saveTimeSettings();
+        this.showSuccess(`Added timezone: ${timezone}`);
+    }
+
+    addTimezoneCheckbox(timezone) {
+        const item = document.createElement('div');
+        item.className = 'timezone-item';
+
+        const label = document.createElement('label');
+        label.innerHTML = `
+            <input type="checkbox" checked data-timezone="${timezone}">
+            <span>${timezone}</span>
+        `;
+
+        item.appendChild(label);
+        this.timezoneList.appendChild(item);
+
+        // Add remove functionality
+        label.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (confirm(`Remove timezone "${timezone}"?`)) {
+                item.remove();
+                this.saveTimeSettings();
+            }
+        });
     }
 }
 

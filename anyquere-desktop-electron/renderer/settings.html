@@ -14,15 +14,15 @@
 
         <main class="settings-main">
             <div class="tabs">
-                <button class="tab-btn active" data-tab="sources">Data Sources</button>
-                <button class="tab-btn" data-tab="data">Data Preview</button>
+                <button class="tab-btn active" data-tab="sources">File Search</button>
+                <button class="tab-btn" data-tab="time">Time Converter</button>
                 <button class="tab-btn" data-tab="about">About</button>
             </div>
 
-            <!-- Data Sources Tab -->
+            <!-- File Search Tab -->
             <div class="tab-content active" id="sources-tab">
                 <div class="section">
-                    <h2>Data Sources</h2>
+                    <h2>File Search Configuration</h2>
                     <p>Configure your CSV files and Google Sheets for searching.</p>
 
                     <div class="sources-table-container">
@@ -43,28 +43,197 @@
 
                     <div class="button-group">
                         <button id="addSourceBtn" class="btn btn-primary">Add Source</button>
-                        <button id="removeSourceBtn" class="btn btn-secondary">Remove Selected</button>
-                        <button id="testSourceBtn" class="btn btn-secondary">Test Selected</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Data Preview Tab -->
-            <div class="tab-content" id="data-tab">
+            <!-- Time Converter Tab -->
+            <div class="tab-content" id="time-tab">
                 <div class="section">
-                    <h2>Data Preview</h2>
-                    <p>Preview the data from your configured sources.</p>
+                    <h2>Time Converter Configuration</h2>
+                    <p>Configure your preferred time zones, formats, and default behaviors for time conversion.</p>
 
-                    <div class="preview-controls">
-                        <select id="previewSourceSelect">
-                            <option value="">Select a source...</option>
-                        </select>
-                        <button id="loadPreviewBtn" class="btn btn-secondary">Load Preview</button>
-                    </div>
+                    <div class="time-settings-grid">
+                        <div class="setting-group">
+                            <h3>Default Time Zones</h3>
+                            <p>Select which time zones to show by default when converting times.</p>
 
-                    <div class="preview-container">
-                        <div id="previewContent" class="preview-content">
-                            Select a source to preview its data
+                            <div class="timezone-list" id="timezoneList">
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="auto">
+                                        <span>Local Time (Auto-detect)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="UTC">
+                                        <span>UTC</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="America/New_York">
+                                        <span>New York (EST/EDT)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="Europe/London">
+                                        <span>London (GMT/BST)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="Europe/Paris">
+                                        <span>Paris (CET/CEST)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="Asia/Tokyo">
+                                        <span>Tokyo (JST)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="Australia/Sydney">
+                                        <span>Sydney (AEST/AEDT)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="America/Los_Angeles">
+                                        <span>Los Angeles (PST/PDT)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="America/Chicago">
+                                        <span>Chicago (CST/CDT)</span>
+                                    </label>
+                                </div>
+                                <div class="timezone-item">
+                                    <label>
+                                        <input type="checkbox" checked data-timezone="Asia/Dubai">
+                                        <span>Dubai (GST)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="customTimezone">Add Custom Time Zone:</label>
+                                <div class="input-group">
+                                    <input type="text" id="customTimezone" placeholder="e.g., Asia/Shanghai, Europe/Berlin">
+                                    <button type="button" id="addTimezoneBtn" class="btn btn-secondary">Add</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h3>Display Formats</h3>
+                            <p>Choose which formats to display when converting times.</p>
+
+                            <div class="format-options">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showISO8601">
+                                    <span>ISO 8601 (2025-10-15T14:30:00Z)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showUnixTimestamp">
+                                    <span>Unix Timestamp (1756107358)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showRFC2822">
+                                    <span>RFC 2822 (Tue, 15 Oct 2025 14:30:00 GMT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showLocalFormat">
+                                    <span>Local Format (10/15/2025, 2:30:00 PM)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showDateOnly">
+                                    <span>Date Only (10/15/2025)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showTimeOnly">
+                                    <span>Time Only (2:30:00 PM)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h3>Behavior Settings</h3>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="autoDetectTime">
+                                    <span>Automatically detect and convert time strings in clipboard</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showQuickExamples">
+                                    <span>Show quick example formats for easy reference</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="copyOnClick">
+                                    <span>Copy converted time to clipboard when clicked</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="defaultInputFormat">Default Input Format:</label>
+                                <select id="defaultInputFormat">
+                                    <option value="auto">Auto-detect (Recommended)</option>
+                                    <option value="iso8601">ISO 8601</option>
+                                    <option value="unix">Unix Timestamp</option>
+                                    <option value="us">US Format (MM/DD/YYYY)</option>
+                                    <option value="european">European Format (DD.MM.YYYY)</option>
+                                    <option value="natural">Natural Language</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="timeZoneDisplayFormat">Time Zone Display Format:</label>
+                                <select id="timeZoneDisplayFormat">
+                                    <option value="abbreviation">Abbreviation (EST, PST, JST)</option>
+                                    <option value="offset">UTC Offset (UTC-5, UTC+8)</option>
+                                    <option value="both">Both (EST / UTC-5)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h3>Shortcuts & Quick Actions</h3>
+                            <p>Configure keyboard shortcuts and quick actions for time conversion.</p>
+
+                            <div class="form-group">
+                                <label for="timeShortcut">Time Converter Shortcut:</label>
+                                <select id="timeShortcut">
+                                    <option value="">Disabled</option>
+                                    <option value="CmdOrCtrl+Shift+T">Cmd/Ctrl+Shift+T</option>
+                                    <option value="CmdOrCtrl+Shift+C">Cmd/Ctrl+Shift+C</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="showCurrentTimeQuick">
+                                    <span>Show "Current Time" quick action button</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked id="enableClipboardDetection">
+                                    <span>Enable clipboard time detection (when opening time converter)</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -161,6 +330,75 @@
                 <button id="testNewSourceBtn" class="btn btn-secondary">Test Connection</button>
                 <button id="saveSourceBtn" class="btn btn-primary">Add Source</button>
                 <button id="cancelSourceBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Preview Modal -->
+    <div class="modal" id="dataPreviewModal">
+        <div class="modal-content" style="max-width: 900px; width: 90%;">
+            <div class="modal-header">
+                <h2>Data Preview</h2>
+                <button class="modal-close" id="closePreviewModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-info" id="previewInfo">
+                    <p><strong>Source:</strong> <span id="previewSourceName">-</span></p>
+                    <p><strong>Type:</strong> <span id="previewSourceType">-</span></p>
+                    <p><strong>Path:</strong> <span id="previewSourcePath">-</span></p>
+                </div>
+
+                <div class="preview-controls">
+                    <div class="control-group">
+                        <label for="previewRows">Number of rows to load:</label>
+                        <select id="previewRows">
+                            <option value="10">10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50" selected>50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="200">200 rows</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button id="refreshPreviewBtn" class="btn btn-secondary">Refresh</button>
+                        <button id="exportPreviewBtn" class="btn btn-secondary">Export CSV</button>
+                    </div>
+                </div>
+
+                <div class="preview-table-container">
+                    <div id="previewLoading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Loading data...</p>
+                    </div>
+
+                    <div id="previewError" class="error-message" style="display: none;">
+                        <p>Failed to load data: <span id="previewErrorText"></span></p>
+                    </div>
+
+                    <div id="previewTableContainer" class="table-container">
+                        <table id="previewTable" class="data-table">
+                            <thead id="previewTableHead">
+                                <tr></tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <tr>
+                                    <td colspan="100%" style="text-align: center; padding: 40px;">
+                                        No data to display. Click "Refresh" to load data.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="preview-stats" id="previewStats" style="display: none;">
+                    <p><strong>Total rows:</strong> <span id="totalRows">-</span></p>
+                    <p><strong>Columns:</strong> <span id="totalColumns">-</span></p>
+                    <p><strong>Last loaded:</strong> <span id="lastLoaded">-</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closePreviewFooterBtn" class="btn btn-secondary">Close</button>
             </div>
         </div>
     </div>

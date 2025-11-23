@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyQuere Time Converter</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: rgba(44, 44, 46, 0.95);
+            backdrop-filter: blur(20px);
+            color: #ffffff;
+            overflow: hidden;
+            -webkit-app-region: no-drag;  /* Ensure body doesn't interfere with window controls */
+        }
+
+        .time-container {
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .time-header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .time-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+  
+        #timeInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+            -webkit-app-region: no-drag;  /* Make input field clickable */
+        }
+
+        #timeInput:focus {
+            border-color: #007aff;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        #timeInput::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #8e8e93;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            -webkit-app-region: no-drag;  /* Make buttons clickable */
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .convert-btn {
+            padding: 8px 16px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            white-space: nowrap;
+            -webkit-app-region: no-drag;  /* Make button clickable */
+        }
+
+        .convert-btn:hover {
+            background: #0056cc;
+        }
+
+        .convert-btn:active {
+            background: #004499;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .formats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .format-item {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #4a90e2;
+        }
+
+        .format-label {
+            font-weight: 600;
+            color: #4a90e2;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .format-value {
+            color: #e0e0e0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .locations-section {
+            margin-top: 30px;
+        }
+
+        .locations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .locations-header h2 {
+            color: #4a90e2;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .locations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .location-card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .location-card:hover {
+            border-color: #4a90e2;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.1);
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .location-time {
+            color: #4a90e2;
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .location-details {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .location-date {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            background: #d32f2f;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        
+        .copy-btn {
+            background: #333;
+            border: 1px solid #444;
+            color: #888;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #444;
+            border-color: #4a90e2;
+            color: #e0e0e0;
+        }
+
+        .copy-btn.copied {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        /* Multi-directional Conversion Table */
+        .conversion-table-section {
+            background: #252525;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .conversion-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .conversion-table th,
+        .conversion-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        .conversion-table th {
+            background: #2a2a2a;
+            color: #4a90e2;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .conversion-table th:first-child {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            font-weight: 600;
+            min-width: 140px;
+        }
+
+        .conversion-table td:first-child {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            font-weight: 500;
+            border-right: 1px solid #333;
+        }
+
+        .conversion-table tbody tr:hover td {
+            background: #2a2a2a;
+        }
+
+        .conversion-table tbody tr:hover td:first-child {
+            background: #333;
+        }
+
+        .conversion-cell {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .conversion-cell:hover {
+            background: #333 !important;
+            color: #4a90e2;
+        }
+
+        .conversion-cell.copied {
+            background: #4a90e2 !important;
+            color: white;
+        }
+
+        .timezone-row-header {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timezone-assumption {
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .table-copy-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #444;
+            border: none;
+            color: #888;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+
+        .conversion-cell:hover .table-copy-btn {
+            opacity: 1;
+        }
+
+        .table-copy-btn:hover {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .conversion-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .conversion-table-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .conversion-table-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .conversion-table-container::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .conversion-table-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="time-container">
+        <div class="time-header">
+            <div class="time-controls">
+                <div class="time-input-wrapper">
+                    <input
+                        type="text"
+                        id="timeInput"
+                        placeholder="Paste or type time (e.g., 2025-10-15T14:30:00Z, 1756107358, Oct 15, 2025 2:30 PM)"
+                        autofocus
+                    >
+                    <button id="convertBtn" class="convert-btn" title="Convert">Convert</button>
+                    <button id="clearBtn" class="icon-btn" title="Clear">🗑️</button>
+                    <button id="currentBtn" class="icon-btn" title="Current Time">⏰</button>
+                    <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+                    <button id="closeBtn" class="icon-btn" title="Close">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="error-message" id="errorMessage"></div>
+            <div class="loading" id="loading">Converting time...</div>
+
+        <div class="conversion-table-section" id="conversionTableSection" style="display: none;">
+            <h2 style="color: #4a90e2; margin: 0 0 15px 0; font-size: 18px;">Multi-Directional Conversion</h2>
+            <div class="conversion-table-container">
+                <table class="conversion-table" id="conversionTable">
+                    <thead id="conversionTableHead"></thead>
+                    <tbody id="conversionTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test basic JavaScript execution
+        console.log('Time HTML: Script starting...');
+
+        const { ipcRenderer } = require('electron');
+        // Temporarily disable TimeConverter to test basic functionality
+        // const TimeConverter = require('../time-converter');
+        // let timeConverter = new TimeConverter();
+        let timeConverter = null;
+
+        // DOM elements - declare at top level so they're accessible to all functions
+        let timeInput, convertBtn, currentBtn, clearBtn, settingsBtn, closeBtn;
+        let errorMessage, loading, conversionTableSection, conversionTable, conversionTableHead, conversionTableBody;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Time HTML - DOM Content Loaded');
+
+            // DOM elements - assign after DOM is ready
+            timeInput = document.getElementById('timeInput');
+            convertBtn = document.getElementById('convertBtn');
+            currentBtn = document.getElementById('currentBtn');
+            clearBtn = document.getElementById('clearBtn');
+            settingsBtn = document.getElementById('settingsBtn');
+            closeBtn = document.getElementById('closeBtn');
+            errorMessage = document.getElementById('errorMessage');
+            loading = document.getElementById('loading');
+            conversionTableSection = document.getElementById('conversionTableSection');
+            conversionTable = document.getElementById('conversionTable');
+            conversionTableHead = document.getElementById('conversionTableHead');
+            conversionTableBody = document.getElementById('conversionTableBody');
+
+            // Debug: Check if all DOM elements are found
+            console.log('DOM elements found:', {
+                timeInput: !!timeInput,
+                convertBtn: !!convertBtn,
+                currentBtn: !!currentBtn,
+                clearBtn: !!clearBtn,
+                settingsBtn: !!settingsBtn,
+                closeBtn: !!closeBtn
+            });
+
+            // Event listeners - moved inside DOMContentLoaded
+            console.log('Setting up event listeners...');
+
+            if (convertBtn) {
+                convertBtn.addEventListener('click', () => {
+                    console.log('Convert button clicked!');
+                    convertTime();
+                });
+            } else {
+                console.error('Convert button not found!');
+            }
+
+            if (currentBtn) {
+                currentBtn.addEventListener('click', () => {
+                    console.log('Current Time button clicked!');
+                    convertWithCurrentTime();
+                });
+            } else {
+                console.error('Current Time button not found!');
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    console.log('Clear button clicked!');
+                    clearAll();
+                });
+            } else {
+                console.error('Clear button not found!');
+            }
+
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    console.log('Settings button clicked!');
+                    openSettings();
+                });
+            } else {
+                console.error('Settings button not found!');
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    console.log('Close button clicked!');
+                    closeTimeWindow();
+                });
+            } else {
+                console.error('Close button not found!');
+            }
+
+            if (timeInput) {
+                timeInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        convertTime();
+                    } else if (e.key === 'Escape') {
+                        clearAll();
+                    }
+                });
+            }
+
+            console.log('Event listeners setup complete');
+
+            if (timeInput) timeInput.focus();
+            if (convertBtn) convertWithCurrentTime();
+        });
+
+        function displayConversionTable(date) {
+            // Define input timezone scenarios (Saigon, Luxembourg, Paris)
+            const inputTimezones = [
+                { name: 'Saigon', timezone: 'Asia/Ho_Chi_Minh' },
+                { name: 'Luxembourg', timezone: 'Europe/Luxembourg' },
+                { name: 'Paris', timezone: 'Europe/Paris' }
+            ];
+
+            // Define target locations for conversion (all 3 locations)
+            const targetLocations = [
+                { name: 'Saigon', timezone: 'Asia/Ho_Chi_Minh' },
+                { name: 'Luxembourg', timezone: 'Europe/Luxembourg' },
+                { name: 'Paris', timezone: 'Europe/Paris' }
+            ];
+
+            // Define output formats for each target location
+            const outputFormats = [
+                { name: 'RFC 2822', key: 'rfc2822' },
+                { name: 'Unix', key: 'unix' }
+            ];
+
+            // Clear existing content
+            conversionTableHead.innerHTML = '';
+            conversionTableBody.innerHTML = '';
+
+            // Create header row
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th>Input Assumption</th>';
+
+            // For each target location, add 2 format columns
+            targetLocations.forEach(location => {
+                outputFormats.forEach(format => {
+                    const th = document.createElement('th');
+                    th.textContent = `${location.name} (${format.name})`;
+                    headerRow.appendChild(th);
+                });
+            });
+
+            conversionTableHead.appendChild(headerRow);
+
+            // Create data rows
+            inputTimezones.forEach(inputTz => {
+                const row = document.createElement('tr');
+
+                // Create row header with input timezone assumption
+                const rowHeader = document.createElement('td');
+                rowHeader.innerHTML = `
+                    <div class="timezone-row-header">
+                        <div>${inputTz.name}</div>
+                        <div class="timezone-assumption">If input is ${inputTz.name} time</div>
+                    </div>
+                `;
+                row.appendChild(rowHeader);
+
+                // For each target location, convert to each format
+                targetLocations.forEach(targetTz => {
+                    // For each target location, convert to each format
+                    outputFormats.forEach(format => {
+                        const cell = document.createElement('td');
+                        cell.className = 'conversion-cell';
+
+                        try {
+                            // Create a new date that represents the input time in the input timezone
+                            const inputDate = createTimezoneAdjustedDate(date, inputTz.timezone);
+
+                            // Convert this date to the target timezone
+                            const convertedDate = convertToTimezone(inputDate, targetTz.timezone);
+
+                            // Get the formatted output
+                            let formattedTime;
+                            if (format.key === 'rfc2822') {
+                                formattedTime = convertedDate.toUTCString().replace('GMT', 'UTC');
+                            } else if (format.key === 'unix') {
+                                formattedTime = Math.floor(convertedDate.getTime() / 1000).toString();
+                            } else {
+                                formattedTime = convertedDate.toString();
+                            }
+
+                            cell.innerHTML = `
+                                <div class="conversion-value">${formattedTime}</div>
+                                <button class="table-copy-btn">Copy</button>
+                            `;
+
+                            // Add copy functionality
+                            cell.addEventListener('click', (e) => {
+                                if (!e.target.classList.contains('table-copy-btn')) {
+                                    copyToClipboardWithFeedback(formattedTime, cell);
+                                }
+                            });
+
+                            // Copy button functionality
+                            const copyBtn = cell.querySelector('.table-copy-btn');
+                            copyBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                copyToClipboardWithFeedback(formattedTime, cell);
+                            });
+
+                        } catch (error) {
+                            cell.innerHTML = `
+                                <div class="conversion-value" style="color: #d32f2f;">Error: ${error.message}</div>
+                            `;
+                        }
+
+                        row.appendChild(cell);
+                    });
+                });
+
+                conversionTableBody.appendChild(row);
+            });
+
+            conversionTableSection.style.display = 'block';
+        }
+
+        function convertTime() {
+            console.log('Convert button clicked!');
+            if (!timeInput) {
+                console.error('timeInput not found');
+                return;
+            }
+            const input = timeInput.value.trim();
+            console.log('Input:', input);
+
+            // Simple test for now
+            if (!input) {
+                showError('Please enter a time to convert');
+                return;
+            }
+
+            hideError();
+            showLoading(true);
+
+            setTimeout(() => {
+                // Simple test - just show current time
+                const now = new Date();
+                displayConversionTable(now);
+                showLoading(false);
+            }, 500);
+        }
+
+        function convertWithCurrentTime() {
+            const now = new Date();
+            timeInput.value = now.toISOString();
+            convertTime();
+        }
+
+        
+        function displayConversionTable(date) {
+            // Define input timezone scenarios (Saigon, Luxembourg, Paris)
+            const inputTimezones = [
+                { name: 'Saigon', timezone: 'Asia/Ho_Chi_Minh' },
+                { name: 'Luxembourg', timezone: 'Europe/Luxembourg' },
+                { name: 'Paris', timezone: 'Europe/Paris' }
+            ];
+
+            // Define target locations for conversion (all 3 locations)
+            const targetLocations = [
+                { name: 'Saigon', timezone: 'Asia/Ho_Chi_Minh' },
+                { name: 'Luxembourg', timezone: 'Europe/Luxembourg' },
+                { name: 'Paris', timezone: 'Europe/Paris' }
+            ];
+
+            // Define output formats for each target location
+            const outputFormats = [
+                { name: 'RFC 2822', key: 'rfc2822' },
+                { name: 'Unix', key: 'unix' }
+            ];
+
+            // Clear existing content
+            conversionTableHead.innerHTML = '';
+            conversionTableBody.innerHTML = '';
+
+            // Create header row
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th>Input Assumption</th>';
+
+            // For each target location, add 2 format columns
+            targetLocations.forEach(location => {
+                outputFormats.forEach(format => {
+                    const th = document.createElement('th');
+                    th.textContent = `${location.name} (${format.name})`;
+                    headerRow.appendChild(th);
+                });
+            });
+
+            conversionTableHead.appendChild(headerRow);
+
+            // Create data rows
+            inputTimezones.forEach(inputTz => {
+                const row = document.createElement('tr');
+
+                // Create row header with input timezone assumption
+                const rowHeader = document.createElement('td');
+                rowHeader.innerHTML = `
+                    <div class="timezone-row-header">
+                        <div>${inputTz.name}</div>
+                        <div class="timezone-assumption">If input is ${inputTz.name} time</div>
+                    </div>
+                `;
+                row.appendChild(rowHeader);
+
+                // For each target location, convert to each format
+                targetLocations.forEach(targetTz => {
+                    // Always convert, even if target is the same as input
+
+                    outputFormats.forEach(format => {
+                        const cell = document.createElement('td');
+                        cell.className = 'conversion-cell';
+
+                        try {
+                            // Create a new date that represents the input time in the input timezone
+                            const inputDate = createTimezoneAdjustedDate(date, inputTz.timezone);
+
+                            // Convert this date to the target timezone
+                            const convertedDate = convertToTimezone(inputDate, targetTz.timezone);
+
+                            // Get the formatted output
+                            let formattedTime;
+                            if (format.key === 'rfc2822') {
+                                formattedTime = convertedDate.toUTCString().replace('GMT', 'UTC');
+                            } else if (format.key === 'unix') {
+                                formattedTime = Math.floor(convertedDate.getTime() / 1000).toString();
+                            } else {
+                                formattedTime = convertedDate.toString();
+                            }
+
+                            cell.innerHTML = `
+                                <div class="conversion-value">${formattedTime}</div>
+                                <button class="table-copy-btn">Copy</button>
+                            `;
+
+                            // Add copy functionality
+                            cell.addEventListener('click', (e) => {
+                                if (!e.target.classList.contains('table-copy-btn')) {
+                                    copyToClipboardWithFeedback(formattedTime, cell);
+                                }
+                            });
+
+                            // Copy button functionality
+                            const copyBtn = cell.querySelector('.table-copy-btn');
+                            copyBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                copyToClipboardWithFeedback(formattedTime, cell);
+                            });
+
+                        } catch (error) {
+                            cell.innerHTML = `
+                                <div class="conversion-value" style="color: #d32f2f;">Error: ${error.message}</div>
+                            `;
+                        }
+
+                        row.appendChild(cell);
+                    });
+                });
+
+                conversionTableBody.appendChild(row);
+            });
+
+            conversionTableSection.style.display = 'block';
+        }
+
+        function createTimezoneAdjustedDate(originalDate, targetTimezone) {
+            // Create a new date that represents what the originalDate would be in targetTimezone
+            // This is tricky because we need to preserve the "local time components" but change the timezone
+
+            // Get the local time components
+            const year = originalDate.getFullYear();
+            const month = originalDate.getMonth();
+            const day = originalDate.getDate();
+            const hours = originalDate.getHours();
+            const minutes = originalDate.getMinutes();
+            const seconds = originalDate.getSeconds();
+            const milliseconds = originalDate.getMilliseconds();
+
+            // Create a new date object with the same components
+            // This will interpret the components in the current local timezone
+            const adjustedDate = new Date(year, month, day, hours, minutes, seconds, milliseconds);
+
+            // Get the timezone offset in minutes
+            const targetOffset = getTimezoneOffset(targetTimezone);
+            const localOffset = -originalDate.getTimezoneOffset(); // Negative because JS returns positive for west
+
+            // Calculate the difference in minutes
+            const offsetDiff = targetOffset - localOffset;
+
+            // Adjust the time by the offset difference
+            adjustedDate.setTime(adjustedDate.getTime() + (offsetDiff * 60 * 1000));
+
+            return adjustedDate;
+        }
+
+        function convertToTimezone(date, timezone) {
+            // Convert a date to the specified timezone
+            try {
+                // Format the date in the target timezone
+                const options = {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+
+                const formatted = date.toLocaleString('en-US', options);
+
+                // Parse the formatted string back to a date object
+                // This creates a date object that represents the same moment in the target timezone
+                const [datePart, timePart] = formatted.split(', ');
+                const [month, day, year] = datePart.split('/');
+                const [hour, minute, second] = timePart.split(':');
+
+                return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+            } catch (error) {
+                // Fallback: return the original date
+                return date;
+            }
+        }
+
+        function getTimezoneOffset(timezone) {
+            // Get the current timezone offset for a given timezone in minutes
+            try {
+                const now = new Date();
+                const utcTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
+                const tzTime = new Date(utcTime.toLocaleString("en-US", {timeZone: timezone}));
+                const localTime = new Date(utcTime.toLocaleString("en-US"));
+
+                return (tzTime.getTime() - localTime.getTime()) / (1000 * 60);
+            } catch (error) {
+                // Fallback for unsupported timezones
+                return 0;
+            }
+        }
+
+        function formatCustomDate(date) {
+            // Custom format: YYYYMMDD HHmmss (from README example)
+            const pad = (num) => num.toString().padStart(2, '0');
+
+            const year = date.getFullYear();
+            const month = pad(date.getMonth() + 1);
+            const day = pad(date.getDate());
+            const hours = pad(date.getHours());
+            const minutes = pad(date.getMinutes());
+            const seconds = pad(date.getSeconds());
+
+            return `${year}${month}${day} ${hours}${minutes}${seconds}`;
+        }
+
+        function copyToClipboardWithFeedback(text, element) {
+            navigator.clipboard.writeText(text).then(() => {
+                element.classList.add('copied');
+
+                setTimeout(() => {
+                    element.classList.remove('copied');
+                }, 1000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        
+        function showCopiedFeedback(element) {
+            const originalBg = element.style.background;
+            element.style.background = '#4a90e2';
+            element.style.transform = 'scale(0.98)';
+
+            setTimeout(() => {
+                element.style.background = originalBg;
+                element.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        function clearAll() {
+            timeInput.value = '';
+            timeInput.focus();
+            hideError();
+            conversionTableSection.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showLoading(show) {
+            loading.classList.toggle('show', show);
+        }
+
+        function openSettings() {
+            // Send message to open settings and focus on Time converter tab, then close time window
+            ipcRenderer.send('open-settings-with-time-focus');
+            closeTimeWindow();
+        }
+
+        function closeTimeWindow() {
+            ipcRenderer.send('close-time-window');
+        }
+    </script>
+</body>
+</html>
