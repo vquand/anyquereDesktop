@@ -8,6 +8,7 @@ class DataManager {
         this.configPath = path.join(__dirname, '../config.json');
         this.config = { sources: [] }; // Initialize with empty sources
         this.dataCache = new Map(); // Cache loaded data
+        this.configLoaded = false; // Flag to track if config is loaded
         console.log('DataManager: Initializing...');
         this.loadConfig();
     }
@@ -17,6 +18,7 @@ class DataManager {
             console.log('DataManager: Loading config from', this.configPath);
             const data = await fs.readFile(this.configPath, 'utf8');
             this.config = JSON.parse(data);
+            this.configLoaded = true; // Mark as loaded
             console.log('DataManager: Config loaded successfully, sources:', this.config.sources?.length || 0);
             // Ensure settings structure exists
             if (!this.config.settings) {
@@ -39,6 +41,7 @@ class DataManager {
                 },
                 sources: []
             };
+            this.configLoaded = true; // Mark as loaded even with default config
             await this.saveConfig();
         }
     }
@@ -56,18 +59,35 @@ class DataManager {
         return this.config.settings || {};
     }
 
-    getSources() {
+    async getSources() {
+        // Wait for config to be loaded if not ready yet
+        if (!this.configLoaded) {
+            console.log('DataManager: Config not loaded yet, waiting...');
+            // Wait a bit and check again (up to 5 seconds)
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds with 100ms intervals
+            while (!this.configLoaded && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (!this.configLoaded) {
+                console.log('DataManager: Config still not loaded after waiting, returning empty sources');
+                return [];
+            }
+        }
         console.log('DataManager: getSources called, returning', this.config.sources?.length || 0, 'sources');
         return this.config.sources || [];
     }
 
-    getSourceAliases() {
-        return this.getSources().map(source => source.alias);
+    async getSourceAliases() {
+        const sources = await this.getSources();
+        return sources.map(source => source.alias);
     }
 
-    getAllSources() {
+    async getAllSources() {
         const sources = {};
-        this.getSources().forEach(source => {
+        const allSources = await this.getSources();
+        allSources.forEach(source => {
             sources[source.alias] = source;
         });
         return sources;
@@ -124,7 +144,8 @@ class DataManager {
             return this.dataCache.get(alias);
         }
 
-        const source = this.getSources().find(s => s.alias === alias);
+        const sources = await this.getSources();
+        const source = sources.find(s => s.alias === alias);
         if (!source) {
             throw new Error(`Source not found: ${alias}`);
         }
@@ -208,7 +229,8 @@ class DataManager {
     async search(alias, query) {
         try {
             const data = await this.loadData(alias);
-            const source = this.getSources().find(s => s.alias === alias);
+            const sources = await this.getSources();
+            const source = sources.find(s => s.alias === alias);
 
             if (!source) {
                 return [];
@@ -266,7 +288,7 @@ class DataManager {
             return [];
         }
 
-        const sources = this.getAllSources();
+        const sources = await this.getAllSources();
         if (sourceName in sources) {
             if (limit) {
                 const originalMax = sources[sourceName].maxResults || 10;

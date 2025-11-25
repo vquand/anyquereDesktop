@@ -484,7 +484,7 @@ class SystemTrayApp {
         ipcMain.handle('get-sources', async () => {
             try {
                 console.log('IPC: get-sources called');
-                const sources = this.dataManager.getSources();
+                const sources = await this.dataManager.getSources();
                 console.log('IPC: get-sources returning', sources.length, 'sources');
                 return sources;
             } catch (error) {
